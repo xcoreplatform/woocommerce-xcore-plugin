@@ -16,7 +16,8 @@ class Xcore_Products extends WC_REST_Products_Controller
 	}
 
 	public function __construct() {
-		$this->init();
+        $this->init();
+	    parent::__construct();
 	}
 
 	public function init() 
@@ -104,7 +105,23 @@ class Xcore_Products extends WC_REST_Products_Controller
 		return $result;
 	}
 
-	public function find_item_by_sku($request) {	
+    public function update_item($request)
+    {
+        $object = $this->get_object( (int) $request['id'] );
+        if ($object->is_type('variation')) {
+            $product = new WC_Product_Variation($request['id']);
+            $product->set_stock_quantity($request['stock_quantity']);
+            $product->set_manage_stock($request['manage_stock']);
+            $product->set_stock_status();
+            $product->save();
+
+            return parent::prepare_object_for_response($product, $request);
+        }
+
+        return parent::update_item($request);
+    }
+
+    public function find_item_by_sku($request) {
 		$type = 'sku';
 		$meta_key = '';
 		$product_reference = $request['id'];

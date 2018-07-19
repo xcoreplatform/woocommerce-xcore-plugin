@@ -4,7 +4,7 @@ defined( 'ABSPATH' ) || exit;
 
 
 class Xcore {
-
+    private $_version = '1.1.0';
 	protected static $_instance = null;
 	protected static $_productInstance = null;
 
@@ -51,8 +51,7 @@ class Xcore {
 
 	public function xcore_api_version($data) 
    {
-	   	$version = '1.0';
-	   	return $version;
+	   	return $this->_version;
    }
 
 	public function includes()
