@@ -1,43 +1,45 @@
 <?php
-defined( 'ABSPATH' ) || exit;
+defined('ABSPATH') || exit;
 
 class Xcore_Payment_Methods extends WC_REST_Payment_Gateways_Controller
 {
-	protected static $_instance = null;
-	public $version = '1';
-	public $namespace = 'wc-xcore/v1';
-	public $base = 'payment_methods';
+    protected static $_instance = null;
+    public           $version   = '1';
+    public           $namespace = 'wc-xcore/v1';
+    public           $base      = 'payment_methods';
 
-	public static function instance() {
-		if ( is_null( self::$_instance ) ) {
-			self::$_instance = new self();
-		}
-		return self::$_instance;
-	}
+    public static function instance()
+    {
+        if (is_null(self::$_instance)) {
+            self::$_instance = new self();
+        }
+        return self::$_instance;
+    }
 
-	public function __construct() {
-		$this->init();
-	}
+    public function __construct()
+    {
+        $this->init();
+    }
 
-	public function init() 
-	{
-		add_action('rest_api_init', function() {
-			register_rest_route( $this->namespace, $this->base, array(   					
-				'methods'         => WP_REST_Server::READABLE,
-				'callback'        => array( $this, 'get_items' ),
-				'permission_callback' => array( $this, 'get_items_permissions_check' ),
-				'args'            => $this->get_collection_params(),		
-			));			
+    public function init()
+    {
+        add_action('rest_api_init', function () {
+            register_rest_route($this->namespace, $this->base, array(
+                'methods'             => WP_REST_Server::READABLE,
+                'callback'            => array($this, 'get_items'),
+                'permission_callback' => array($this, 'get_items_permissions_check'),
+                'args'                => $this->get_collection_params(),
+            ));
 
-			register_rest_route( $this->namespace, $this->base . '/(?P<id>[\d]+)', array(   					
-				'methods'             => WP_REST_Server::READABLE,
-				'callback'            => array( $this, 'get_item' ),
-				'permission_callback' => array( $this, 'get_item_permissions_check' ),
-				'args'                => array(
-					'context' => $this->get_context_param( array( 'default' => 'view' ) ),
-				),	
-			));	
-		});
-	}
+            register_rest_route($this->namespace, $this->base . '/(?P<id>[\d]+)', array(
+                'methods'             => WP_REST_Server::READABLE,
+                'callback'            => array($this, 'get_item'),
+                'permission_callback' => array($this, 'get_item_permissions_check'),
+                'args'                => array(
+                    'context' => $this->get_context_param(array('default' => 'view')),
+                ),
+            ));
+        });
+    }
 
 }

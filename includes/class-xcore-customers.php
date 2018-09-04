@@ -1,67 +1,69 @@
 <?php
-defined( 'ABSPATH' ) || exit;
+defined('ABSPATH') || exit;
 
 class Xcore_Customers extends WC_REST_Customers_Controller
 {
-	protected static $_instance = null;
-	public $version = '1';
-	public $namespace = 'wc-xcore/v1';
-	public $base = 'customers';
+    protected static $_instance = null;
+    public           $version   = '1';
+    public           $namespace = 'wc-xcore/v1';
+    public           $base      = 'customers';
 
-	public static function instance() {
-		if ( is_null( self::$_instance ) ) {
-			self::$_instance = new self();
-		}
-		return self::$_instance;
-	}
+    public static function instance()
+    {
+        if (is_null(self::$_instance)) {
+            self::$_instance = new self();
+        }
+        return self::$_instance;
+    }
 
-	public function __construct() {
-		$this->init();
-	}
+    public function __construct()
+    {
+        $this->init();
+    }
 
-	public function init() 
-	{
-		add_action('rest_api_init', function() {
-			register_rest_route( $this->namespace, $this->base, array(   					
-				'methods'         => WP_REST_Server::READABLE,
-				'callback'        => array( $this, 'get_items' ),
-				'permission_callback' => array( $this, 'get_items_permissions_check' ),
-				'args'            => $this->get_collection_params(),		
-			));	
+    public function init()
+    {
+        add_action('rest_api_init', function () {
+            register_rest_route($this->namespace, $this->base, array(
+                'methods'             => WP_REST_Server::READABLE,
+                'callback'            => array($this, 'get_items'),
+                'permission_callback' => array($this, 'get_items_permissions_check'),
+                'args'                => $this->get_collection_params(),
+            ));
 
-			register_rest_route( $this->namespace, $this->base . '/(?P<id>[\d]+)', array(
-				'args' => array(
-					'id' => array(
-						'description' => __( 'Unique identifier for the resource.', 'woocommerce' ),
-						'type'        => 'integer',
-					),
-				),
-				array(
-					'methods'             => WP_REST_Server::READABLE,
-					'callback'            => array( $this, 'get_item' ),
-					'permission_callback' => array( $this, 'get_item_permissions_check' ),
-					'args'                => array(
-						'context' => $this->get_context_param( array( 'default' => 'view' ) ),
-					),
-				),
-			));	
-		});
-	}
+            register_rest_route($this->namespace, $this->base . '/(?P<id>[\d]+)', array(
+                'args' => array(
+                    'id' => array(
+                        'description' => __('Unique identifier for the resource.', 'woocommerce'),
+                        'type'        => 'integer',
+                    ),
+                ),
+                array(
+                    'methods'             => WP_REST_Server::READABLE,
+                    'callback'            => array($this, 'get_item'),
+                    'permission_callback' => array($this, 'get_item_permissions_check'),
+                    'args'                => array(
+                        'context' => $this->get_context_param(array('default' => 'view')),
+                    ),
+                ),
+            ));
+        });
+    }
 
-	public function get_items( $request ) {
-		global $wpdb;   		
+    public function get_items($request)
+    {
+        global $wpdb;
 
-   		$limit = (int) $request['limit']?: 50;
+        $limit = (int)$request['limit'] ?: 50;
 
+        $key       = 'date_modified';
+        $value     = $request['date_modified'] ?? 0;
+        $condition = '>';
 
-   		$key = 'date_modified';	   		
-   		$value = $request['date_modified'] ?? 0;
-   		$condition = '>';
+        $wp_users_table = $wpdb->prefix . 'users';
+        $wp_user_meta   = $wpdb->prefix . 'usermeta';
 
-   		$wp_users_table = $wpdb->prefix . 'users';
-   		$wp_user_meta = $wpdb->prefix . 'usermeta';
-
-   		$q = "
+        $q = "
    		SELECT 
 		ID as id, 		  
 	    user_registered as date_created, 
@@ -83,14 +85,14 @@ class Xcore_Customers extends WC_REST_Customers_Controller
 		ORDER BY $key ASC LIMIT %d
 		";
 
-		$sql = $wpdb->prepare($q, array($key, $value, $value, $limit));
-		$results = $wpdb->get_results($sql, ARRAY_A); 	
+        $sql     = $wpdb->prepare($q, array($key, $value, $value, $limit));
+        $results = $wpdb->get_results($sql, ARRAY_A);
 
-		foreach($results as $key => $value) { 				
-			$results[$key]['date_created'] = new WC_DateTime($value['date_created']);
-			$results[$key]['date_modified'] = new WC_DateTime($value['date_modified']);
-		}
-		return $results;
-	}
+        foreach ($results as $key => $value) {
+            $results[$key]['date_created']  = new WC_DateTime($value['date_created']);
+            $results[$key]['date_modified'] = new WC_DateTime($value['date_modified']);
+        }
+        return $results;
+    }
 
 }
