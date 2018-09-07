@@ -3,7 +3,7 @@
    Plugin Name: xCore Rest API extension
    Plugin URI: http://xcore.dealer4dealer.nl
    description: Extend WP Rest API to support xCore requests
-   @Version: 1.2.0
+   @Version: 1.2.1
    @Author: Dealer4Dealer
    Author URI: http://www.dealer4dealer.nl
    Requires at least: 4.7.5

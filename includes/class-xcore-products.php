@@ -128,7 +128,7 @@ class Xcore_Products extends WC_REST_Products_Controller
     {
         $type              = 'sku';
         $meta_key          = '';
-        $product_reference = $request['id'];
+        $product_reference = urldecode($request['id']);
 
         if ($type == 'sku')
             $meta_key = '_sku';
