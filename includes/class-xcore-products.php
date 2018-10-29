@@ -32,6 +32,20 @@ class Xcore_Products extends WC_REST_Products_Controller
                 'args'                => $this->get_collection_params(),
             ));
 
+            register_rest_route($this->namespace, $this->base, array(
+                'methods'             => WP_REST_Server::CREATABLE,
+                'callback'            => array( $this, 'create_item' ),
+                'permission_callback' => array( $this, 'create_item_permissions_check' ),
+                'args'                => $this->get_endpoint_args_for_item_schema( WP_REST_Server::CREATABLE ),
+            ));
+
+            register_rest_route($this->namespace, $this->base, array(
+                'methods'             => WP_REST_Server::EDITABLE,
+                'callback'            => array($this, 'update_item'),
+                'permission_callback' => array($this, 'update_item_permissions_check'),
+                'args'                => $this->get_endpoint_args_for_item_schema(WP_REST_Server::EDITABLE),
+            ));
+
             register_rest_route($this->namespace, $this->base . '/(?P<id>[\d]+)', array(
                 'methods'             => WP_REST_Server::READABLE,
                 'callback'            => array($this, 'get_item'),
@@ -202,11 +216,13 @@ class Xcore_Products extends WC_REST_Products_Controller
             $term_id = intval($term->term_id);
 
             // Get category display type
-            $display_type = get_woocommerce_term_meta($term_id, 'display_type');
+            $display_type = function_exists( 'get_term_meta' ) ? get_term_meta( $term_id, 'display_type', true ) : get_metadata( 'woocommerce_term', $term_id, 'display_type', true);
+
 
             // Get category image
             $image = '';
-            if ($image_id = get_woocommerce_term_meta($term_id, 'thumbnail_id')) {
+            $image_id = function_exists( 'get_term_meta' ) ? get_term_meta( $term_id, 'thumbnail_id', true ) : get_metadata( 'woocommerce_term', $term_id, 'thumbnail_id', true);
+            if ($image_id) {
                 $image = wp_get_attachment_url($image_id);
             }
 
