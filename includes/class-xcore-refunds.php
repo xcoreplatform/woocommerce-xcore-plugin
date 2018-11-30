@@ -145,7 +145,7 @@ class Xcore_Refunds extends WC_REST_Order_Refunds_Controller
         $data              = $object->get_data();
         $format_decimal    = array('amount');
         $format_date       = array('date_created');
-        $format_line_items = array('line_items', 'shipping_lines');
+        $format_line_items = array('line_items', 'shipping_lines', 'fee_lines');
 
         // Format decimal values.
         foreach ($format_decimal as $key) {
@@ -175,6 +175,7 @@ class Xcore_Refunds extends WC_REST_Order_Refunds_Controller
             'meta_data'        => $data['meta_data'],
             'line_items'       => $data['line_items'],
             'shipping_lines'   => $data['shipping_lines'],
+            'fee_lines'        => $data['fee_lines'],
         );
     }
 }
