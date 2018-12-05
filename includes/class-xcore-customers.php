@@ -31,6 +31,27 @@ class Xcore_Customers extends WC_REST_Customers_Controller
                 'args'                => $this->get_collection_params(),
             ));
 
+            register_rest_route($this->namespace, $this->base, array(
+                'methods'             => WP_REST_Server::CREATABLE,
+                'callback'            => array($this, 'create_item'),
+                'permission_callback' => array($this, 'create_item_permissions_check'),
+                'args'                => $this->get_endpoint_args_for_item_schema( WP_REST_Server::CREATABLE ),
+            ));
+
+            register_rest_route($this->namespace, $this->base . '/(?P<id>[\d]+)', array(
+                'methods'             => WP_REST_Server::EDITABLE,
+                'callback'            => array($this, 'update_item'),
+                'permission_callback' => array($this, 'update_item_permissions_check'),
+                'args'                => $this->get_endpoint_args_for_item_schema(WP_REST_Server::EDITABLE),
+            ));
+
+            register_rest_route($this->namespace, $this->base . '/roles', array(
+                'methods'             => WP_REST_Server::READABLE,
+                'callback'            => array($this, 'get_roles'),
+                'permission_callback' => array($this, 'get_items_permissions_check'),
+                'args'                => $this->get_collection_params(),
+            ));
+
             register_rest_route($this->namespace, $this->base . '/(?P<id>[\d]+)', array(
                 'args' => array(
                     'id' => array(
@@ -53,6 +74,13 @@ class Xcore_Customers extends WC_REST_Customers_Controller
     public function get_items($request)
     {
         global $wpdb;
+
+        /**
+         * If e-mail is given with the request, let woocommerce handle it.
+         */
+        if($request['email']) {
+            return parent::get_items($request);
+        }
 
         $limit = (int)$request['limit'] ?: 50;
 
