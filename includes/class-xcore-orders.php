@@ -43,8 +43,6 @@ class Xcore_Orders extends WC_REST_Orders_Controller
     public function get_items($request)
     {
         $limit = (int)$request['limit'] ?: 50;
-
-        $field = 'post_modified_gmt';
         $date  = $request['date_modified'] ?: '2001-01-01 00:00:00';
 
         $orders = new WP_Query(array(
@@ -52,11 +50,11 @@ class Xcore_Orders extends WC_REST_Orders_Controller
                                    'post_type'      => 'shop_order',
                                    'post_status'    => array_keys(wc_get_order_statuses()),
                                    'posts_per_page' => $limit,
-                                   'orderby'        => $field,
+                                   'orderby'        => 'post_modified',
                                    'order'          => 'ASC',
                                    'date_query'     => array(
                                        array(
-                                           'column' => $field,
+                                           'column' => 'post_modified_gmt',
                                            'after'  => $date
                                        )
                                    )

@@ -55,8 +55,6 @@ class Xcore_Refunds extends WC_REST_Order_Refunds_Controller
         }
 
         $limit = (int)$request['limit'] ?: 50;
-
-        $field = 'post_modified_gmt';
         $date  = $request['date_modified'] ?: '2001-01-01 00:00:00';
 
         $orders = new WP_Query(array(
@@ -64,11 +62,11 @@ class Xcore_Refunds extends WC_REST_Order_Refunds_Controller
                                    'post_type'      => 'shop_order_refund',
                                    'post_status'    => array_keys(wc_get_order_statuses()),
                                    'posts_per_page' => $limit,
-                                   'orderby'        => $field,
+                                   'orderby'        => 'post_modified',
                                    'order'          => 'ASC',
                                    'date_query'     => array(
                                        array(
-                                           'column' => $field,
+                                           'column' => 'post_modified_gmt',
                                            'after'  => $date
                                        )
                                    )
