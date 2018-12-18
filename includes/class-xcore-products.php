@@ -88,19 +88,17 @@ class Xcore_Products extends WC_REST_Products_Controller
     public function get_items($request)
     {
         $limit = (int)$request['limit'] ?: 50;
-
-        $field = 'post_modified_gmt';
         $date  = $request['date_modified'] ?: '2001-01-01 00:00:00';
 
         $products = new WP_Query(array(
                                      'numberposts'    => -1,
                                      'post_type'      => array('product', 'product_variation'),
                                      'posts_per_page' => $limit,
-                                     'orderby'        => $field,
+                                     'orderby'        => 'post_modified',
                                      'order'          => 'ASC',
                                      'date_query'     => array(
                                          array(
-                                             'column' => $field,
+                                             'column' => 'post_modified_gmt',
                                              'after'  => $date
                                          )
                                      )
