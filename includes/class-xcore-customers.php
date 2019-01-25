@@ -85,8 +85,7 @@ class Xcore_Customers extends WC_REST_Customers_Controller
         $limit = (int)$request['limit'] ?: 50;
 
         $key       = 'date_modified';
-        $value     = $request['date_modified'] ?? 0;
-        $condition = '>';
+        $value     = $request['date_modified'] ?: 0;
 
         $wp_users_table = $wpdb->prefix . 'users';
         $wp_user_meta   = $wpdb->prefix . 'usermeta';

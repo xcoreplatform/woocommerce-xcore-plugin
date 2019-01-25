@@ -4,7 +4,7 @@ defined('ABSPATH') || exit;
 
 class Xcore
 {
-    private          $_version         = '1.4.2';
+    private          $_version         = '1.4.3';
     protected static $_instance        = null;
     protected static $_productInstance = null;
 
@@ -41,9 +41,8 @@ class Xcore
 
         add_action('rest_api_init', function () {
             register_rest_route('wc-xcore/v1', 'version', array(
-                'methods'     => WP_REST_Server::READABLE,
-                'callback'    => array($this, 'xcore_api_version'),
-                'description' => 'test',
+                'methods'             => WP_REST_Server::READABLE,
+                'callback'            => array($this, 'xcore_api_version'),
             ));
         });
     }
