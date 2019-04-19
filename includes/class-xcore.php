@@ -4,7 +4,7 @@ defined('ABSPATH') || exit;
 
 class Xcore
 {
-    private          $_version         = '1.4.3';
+    private          $_version         = '1.5.0';
     protected static $_instance        = null;
     protected static $_productInstance = null;
 
@@ -61,6 +61,7 @@ class Xcore
         include_once dirname(__FILE__) . '/class-xcore-shipping-methods.php';
         include_once dirname(__FILE__) . '/class-xcore-payment-methods.php';
         include_once dirname(__FILE__) . '/class-xcore-tax-classes.php';
+        include_once dirname(__FILE__) . '/helpers/class-xcore-helper.php';
     }
 
     public function products()

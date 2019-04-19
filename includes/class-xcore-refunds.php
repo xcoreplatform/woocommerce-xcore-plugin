@@ -89,7 +89,21 @@ class Xcore_Refunds extends WC_REST_Order_Refunds_Controller
     public function get_item($request)
     {
         $refund_object = $this->get_object($request['id']);
+
+        $request['id'] = $request['order_id'];
+        $orderInstance                    = new Xcore_Orders();
+        $order = $orderInstance->get_item($request);
+        $orderData = $order->get_data();
+
         $response      = $this->prepare_object_for_response($refund_object, $request);
+        $response->data['parent_id']      = $orderData['id'];
+        $response->data['original_order'] = $orderData;
+
+        $types = ['line_items', 'shipping_lines', 'fee_lines'];
+
+        foreach($types as $type) {
+            Xcore_Helper::add_tax_rate($response->data, $type);
+        }
 
         return $response;
     }

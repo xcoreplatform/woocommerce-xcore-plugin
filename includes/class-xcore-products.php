@@ -67,6 +67,11 @@ class Xcore_Products extends WC_REST_Products_Controller
                 'args'                => $this->get_endpoint_args_for_item_schema(WP_REST_Server::EDITABLE),
             ));
 
+            register_rest_route($this->namespace, 'products/types', array(
+                'methods'  => WP_REST_Server::READABLE,
+                'callback' => array($this, 'get_product_types'),
+            ));
+
             register_rest_route($this->namespace, 'products/categories', array(
                 'methods'  => WP_REST_Server::READABLE,
                 'callback' => array($this, 'get_product_categories'),
@@ -163,6 +168,11 @@ class Xcore_Products extends WC_REST_Products_Controller
 
         $object = parent::get_object($product_id);
         return parent::prepare_object_for_response($object, $request);
+    }
+
+    public function get_product_types($request)
+    {
+        return wc_get_product_types();
     }
 
     public function get_product_categories($request)
