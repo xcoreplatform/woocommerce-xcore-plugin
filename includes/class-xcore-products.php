@@ -130,13 +130,27 @@ class Xcore_Products extends WC_REST_Products_Controller
         $object = $this->get_object((int)$request['id']);
         if ($object->is_type('variation')) {
             $product = new WC_Product_Variation($request['id']);
-            $product->set_stock_quantity($request['stock_quantity']);
-            $product->set_manage_stock($request['manage_stock']);
-            $product->set_regular_price($request['regular_price']);
-            $product->set_tax_class($request['tax_class']);
-            $product->set_weight($request['weight']);
-            $product->set_catalog_visibility($request['catalog_visibility']);
-            $product->set_backorders($request['backorders']);
+            if(isset($request['stock_quantity'])){
+                $product->set_stock_quantity($request['stock_quantity']);
+            }
+            if(isset($request['manage_stock'])){
+                $product->set_manage_stock($request['manage_stock']);
+            }
+            if(isset($request['regular_price'])){
+                $product->set_regular_price($request['regular_price']);
+            }
+            if(isset($request['tax_class'])){
+                $product->set_tax_class($request['tax_class']);
+            }
+            if(isset($request['weight'])){
+                $product->set_weight($request['weight']);
+            }
+            if(isset($request['catalog_visibility'])){
+                $product->set_catalog_visibility($request['catalog_visibility']);
+            }
+            if(isset($request['backorders'])){
+                $product->set_backorders($request['backorders']);
+            }
             $product->set_stock_status();
             $product->save();
 
