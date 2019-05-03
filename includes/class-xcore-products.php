@@ -132,8 +132,18 @@ class Xcore_Products extends WC_REST_Products_Controller
             $product = new WC_Product_Variation($request['id']);
             $product->set_stock_quantity($request['stock_quantity']);
             $product->set_manage_stock($request['manage_stock']);
+            $product->set_regular_price($request['regular_price']);
+            $product->set_tax_class($request['tax_class']);
+            $product->set_weight($request['weight']);
+            $product->set_catalog_visibility($request['catalog_visibility']);
+            $product->set_backorders($request['backorders']);
             $product->set_stock_status();
             $product->save();
+
+            // trigger an update (for example to let polylang sync products between languages)
+            if(has_action('woocommerce_update_product')){
+                do_action( 'woocommerce_update_product', $product->get_id() );
+            }
 
             return parent::prepare_object_for_response($product, $request);
         }
@@ -155,9 +165,9 @@ class Xcore_Products extends WC_REST_Products_Controller
         $product_id = $wpdb->get_var(
             $wpdb->prepare(
                 "SELECT post_id 
-  				FROM $wpdb->postmeta 
-  				WHERE meta_key='%s' 
-  				AND meta_value='%s'",
+                  FROM $wpdb->postmeta 
+                  WHERE meta_key='%s' 
+                  AND meta_value='%s'",
                 $meta_key,
                 $product_reference
             )
