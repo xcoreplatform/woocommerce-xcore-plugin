@@ -1,0 +1,13 @@
+{
+	"name": "dealer4dealer/woocommerce-xcore-plugin",
+	"description": "xCore WooCommerce API extension",
+	"type": "wordpress-plugin",
+	"authors": [
+		{
+			"name": "Stephan Hoogland",
+			"email": "stephan@shoogland.com"
+		}
+	],
+	"require": {},
+	"version": "1.5.1"
+}
