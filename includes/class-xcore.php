@@ -54,6 +54,7 @@ class Xcore
 
     public function includes()
     {
+        WC()->api->rest_api_includes();
         include_once dirname(__FILE__) . '/class-xcore-products.php';
         include_once dirname(__FILE__) . '/class-xcore-customers.php';
         include_once dirname(__FILE__) . '/class-xcore-orders.php';
