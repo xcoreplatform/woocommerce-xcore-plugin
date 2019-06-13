@@ -21,16 +21,17 @@ class Xcore_Tax_Classes extends WC_REST_Tax_Classes_Controller
         $this->init();
     }
 
+    /**
+     * Register all tax class routes
+     */
     public function init()
     {
-        add_action('rest_api_init', function () {
-            register_rest_route($this->namespace, $this->base, array(
-                'methods'             => WP_REST_Server::READABLE,
-                'callback'            => array($this, 'get_items'),
-                'permission_callback' => array($this, 'get_items_permissions_check'),
-                'args'                => $this->get_collection_params(),
-            ));
-        });
+        register_rest_route($this->namespace, $this->base, array(
+            'methods'             => WP_REST_Server::READABLE,
+            'callback'            => array($this, 'get_items'),
+            'permission_callback' => array($this, 'get_items_permissions_check'),
+            'args'                => $this->get_collection_params(),
+        ));
     }
 
 }

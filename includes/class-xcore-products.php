@@ -18,77 +18,78 @@ class Xcore_Products extends WC_REST_Products_Controller
 
     public function __construct()
     {
-        $this->init();
         parent::__construct();
-    }
-
-    public function init()
-    {
-        add_action('rest_api_init', function () {
-            register_rest_route($this->namespace, $this->base, array(
-                'methods'             => WP_REST_Server::READABLE,
-                'callback'            => array($this, 'get_items'),
-                'permission_callback' => array($this, 'get_items_permissions_check'),
-                'args'                => $this->get_collection_params(),
-            ));
-
-            register_rest_route($this->namespace, $this->base, array(
-                'methods'             => WP_REST_Server::CREATABLE,
-                'callback'            => array( $this, 'create_item' ),
-                'permission_callback' => array( $this, 'create_item_permissions_check' ),
-                'args'                => $this->get_endpoint_args_for_item_schema( WP_REST_Server::CREATABLE ),
-            ));
-
-            register_rest_route($this->namespace, $this->base, array(
-                'methods'             => WP_REST_Server::EDITABLE,
-                'callback'            => array($this, 'update_item'),
-                'permission_callback' => array($this, 'update_item_permissions_check'),
-                'args'                => $this->get_endpoint_args_for_item_schema(WP_REST_Server::EDITABLE),
-            ));
-
-            register_rest_route($this->namespace, $this->base . '/(?P<id>[\d]+)', array(
-                'methods'             => WP_REST_Server::READABLE,
-                'callback'            => array($this, 'get_item'),
-                'permission_callback' => array($this, 'get_item_permissions_check'),
-                'args'                => $this->get_collection_params(),
-            ));
-
-            register_rest_route($this->namespace, $this->base . '/findby/sku/(?P<id>[\S]+)', array(
-                'methods'             => WP_REST_Server::READABLE,
-                'callback'            => array($this, 'find_item_by_sku'),
-                'permission_callback' => array($this, 'get_item_permissions_check'),
-                'args'                => $this->get_collection_params(),
-            ));
-
-            register_rest_route($this->namespace, $this->base . '/(?P<id>[\d]+)', array(
-                'methods'             => WP_REST_Server::EDITABLE,
-                'callback'            => array($this, 'update_item'),
-                'permission_callback' => array($this, 'update_item_permissions_check'),
-                'args'                => $this->get_endpoint_args_for_item_schema(WP_REST_Server::EDITABLE),
-            ));
-
-            register_rest_route($this->namespace, 'products/types', array(
-                'methods'  => WP_REST_Server::READABLE,
-                'callback' => array($this, 'get_product_types'),
-            ));
-
-            register_rest_route($this->namespace, 'products/categories', array(
-                'methods'  => WP_REST_Server::READABLE,
-                'callback' => array($this, 'get_product_categories'),
-            ));
-
-            register_rest_route($this->namespace, 'products/categories' . '/(?P<id>[\d]+)', array(
-                'methods'  => WP_REST_Server::READABLE,
-                'callback' => array($this, 'get_product_category'),
-            ));
-        });
+        $this->init();
     }
 
     /**
-     * Get a collection of items
+     * Register all product routes
+     */
+    public function init()
+    {
+        register_rest_route($this->namespace, $this->base, array(
+            'methods'             => WP_REST_Server::READABLE,
+            'callback'            => array($this, 'get_items'),
+            'permission_callback' => array($this, 'get_items_permissions_check'),
+            'args'                => $this->get_collection_params(),
+        ));
+
+        register_rest_route($this->namespace, $this->base, array(
+            'methods'             => WP_REST_Server::CREATABLE,
+            'callback'            => array( $this, 'create_item' ),
+            'permission_callback' => array( $this, 'create_item_permissions_check' ),
+            'args'                => $this->get_endpoint_args_for_item_schema( WP_REST_Server::CREATABLE ),
+        ));
+
+        register_rest_route($this->namespace, $this->base, array(
+            'methods'             => WP_REST_Server::EDITABLE,
+            'callback'            => array($this, 'update_item'),
+            'permission_callback' => array($this, 'update_item_permissions_check'),
+            'args'                => $this->get_endpoint_args_for_item_schema(WP_REST_Server::EDITABLE),
+        ));
+
+        register_rest_route($this->namespace, $this->base . '/(?P<id>[\d]+)', array(
+            'methods'             => WP_REST_Server::READABLE,
+            'callback'            => array($this, 'get_item'),
+            'permission_callback' => array($this, 'get_item_permissions_check'),
+            'args'                => $this->get_collection_params(),
+        ));
+
+        register_rest_route($this->namespace, $this->base . '/findby/sku/(?P<id>[\S]+)', array(
+            'methods'             => WP_REST_Server::READABLE,
+            'callback'            => array($this, 'find_item_by_sku'),
+            'permission_callback' => array($this, 'get_item_permissions_check'),
+            'args'                => $this->get_collection_params(),
+        ));
+
+        register_rest_route($this->namespace, $this->base . '/(?P<id>[\d]+)', array(
+            'methods'             => WP_REST_Server::EDITABLE,
+            'callback'            => array($this, 'update_item'),
+            'permission_callback' => array($this, 'update_item_permissions_check'),
+            'args'                => $this->get_endpoint_args_for_item_schema(WP_REST_Server::EDITABLE),
+        ));
+
+        register_rest_route($this->namespace, 'products/types', array(
+            'methods'  => WP_REST_Server::READABLE,
+            'callback' => array($this, 'get_product_types'),
+        ));
+
+        register_rest_route($this->namespace, 'products/categories', array(
+            'methods'  => WP_REST_Server::READABLE,
+            'callback' => array($this, 'get_product_categories'),
+        ));
+
+        register_rest_route($this->namespace, 'products/categories' . '/(?P<id>[\d]+)', array(
+            'methods'  => WP_REST_Server::READABLE,
+            'callback' => array($this, 'get_product_category'),
+        ));
+    }
+
+    /**
+     * Returns an array with item information
      *
      * @param WP_REST_Request $request Full data about the request.
-     * @return WP_Error|WP_REST_Response
+     * @return array
      */
     public function get_items($request)
     {
@@ -125,14 +126,33 @@ class Xcore_Products extends WC_REST_Products_Controller
         return $result;
     }
 
+    /**
+     * @param WP_REST_Request $request
+     * @return WP_Error|WP_REST_Response
+     */
     public function update_item($request)
     {
         $object = $this->get_object((int)$request['id']);
+
+        if(!$object) {
+            return new WP_Error( '404', 'No item found with ID: '. $request['id'], array( 'status' => '404' ));
+        }
+
         if ($object->is_type('variation')) {
             $product = new WC_Product_Variation($request['id']);
-            $product->set_stock_quantity($request['stock_quantity']);
-            $product->set_manage_stock($request['manage_stock']);
-            $product->set_stock_status();
+
+            if(isset($request['stock_quantity'])) {
+                $product->set_stock_quantity($request['stock_quantity']);
+            }
+
+            if(isset($request['manage_stock'])) {
+                $product->set_manage_stock($request['manage_stock']);
+            }
+
+            if(isset($request['backorders'])) {
+                $product->set_backorders($request['backorders']);
+            }
+
             $product->save();
 
             return parent::prepare_object_for_response($product, $request);
@@ -141,40 +161,35 @@ class Xcore_Products extends WC_REST_Products_Controller
         return parent::update_item($request);
     }
 
+    /**
+     * @param $request
+     * @return WP_Error|WP_REST_Response
+     */
     public function find_item_by_sku($request)
     {
-        $type              = 'sku';
-        $meta_key          = '';
         $product_reference = urldecode($request['id']);
-
-        if ($type == 'sku')
-            $meta_key = '_sku';
-
-        global $wpdb;
-
-        $product_id = $wpdb->get_var(
-            $wpdb->prepare(
-                "SELECT post_id 
-  				FROM $wpdb->postmeta 
-  				WHERE meta_key='%s' 
-  				AND meta_value='%s'",
-                $meta_key,
-                $product_reference
-            )
-        );
-
-        if (!$product_id)
-            return null;
-
+        $product_id = wc_get_product_id_by_sku($product_reference);
         $object = parent::get_object($product_id);
-        return parent::prepare_object_for_response($object, $request);
+
+        if($object) {
+            return parent::prepare_object_for_response($object, $request);
+        }
+        return new WP_Error( '404', 'No item found with SKU: '. $product_reference, array( 'status' => '404' ));
     }
 
+    /**
+     * @param WP_REST_Request $request
+     * @return array
+     */
     public function get_product_types($request)
     {
         return wc_get_product_types();
     }
 
+    /**
+     * @param $request
+     * @return mixed|void
+     */
     public function get_product_categories($request)
     {
         $orderby    = 'name';
@@ -196,6 +211,11 @@ class Xcore_Products extends WC_REST_Products_Controller
         return apply_filters('woocommerce_api_product_categories_response', $product_categories, $terms, null, $this);
     }
 
+    /**
+     * @param $request
+     * @param null $id
+     * @return array|WP_Error
+     */
     public function get_product_category($request, $id = null)
     {
         if (!isset($id)) {

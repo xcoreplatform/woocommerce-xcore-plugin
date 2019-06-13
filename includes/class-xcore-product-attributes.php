@@ -1,12 +1,11 @@
 <?php
-defined('ABSPATH') || exit;
 
-class Xcore_Shipping_Methods extends WC_REST_Shipping_Methods_Controller
+class Xcore_Product_Attributes extends WC_REST_Product_Attributes_Controller
 {
     protected static $_instance = null;
     public           $version   = '1';
     public           $namespace = 'wc-xcore/v1';
-    public           $base      = 'shipping_methods';
+    public           $base      = 'products/attributes';
 
     public static function instance()
     {
@@ -22,9 +21,9 @@ class Xcore_Shipping_Methods extends WC_REST_Shipping_Methods_Controller
     }
 
     /**
-     * Register all shippingmethod routes
+     * Register all product attribute routes
      */
-    public function init()
+    private function init()
     {
         register_rest_route($this->namespace, $this->base, array(
             'methods'             => WP_REST_Server::READABLE,
@@ -43,4 +42,24 @@ class Xcore_Shipping_Methods extends WC_REST_Shipping_Methods_Controller
         ));
     }
 
+    /**
+     * Get all available product attributes. This includes an option to add all attribute options
+     * in the same call, to limit requests.
+     *
+     * @param WP_REST_Request $request
+     * @return array
+     */
+    public function get_items($request)
+    {
+        $attributes = parent::get_items($request);
+
+        if($request['add_options'] == true) {
+            foreach($attributes->data as &$attribute) {
+                $taxonomy = wc_attribute_taxonomy_name_by_id($attribute['id']);
+                $options = get_terms($taxonomy);
+                $attribute['options'] = $options;
+            }
+        }
+        return $attributes;
+    }
 }

@@ -2,8 +2,12 @@
 
 defined( 'ABSPATH' ) || exit;
 
-class Xcore_Helper {
-
+class Xcore_Helper
+{
+    /**
+     * @param $data
+     * @param $key
+     */
     static public function add_tax_rate(&$data, $key)
     {
         if(array_key_exists($key, $data)) {
@@ -24,7 +28,5 @@ class Xcore_Helper {
                 }
             }
         }
-
     }
-
 }

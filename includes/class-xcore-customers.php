@@ -21,56 +21,62 @@ class Xcore_Customers extends WC_REST_Customers_Controller
         $this->init();
     }
 
+    /**
+     * Register all customer routes
+     */
     public function init()
     {
-        add_action('rest_api_init', function () {
-            register_rest_route($this->namespace, $this->base, array(
-                'methods'             => WP_REST_Server::READABLE,
-                'callback'            => array($this, 'get_items'),
-                'permission_callback' => array($this, 'get_items_permissions_check'),
-                'args'                => $this->get_collection_params(),
-            ));
+        register_rest_route($this->namespace, $this->base, array(
+            'methods'             => WP_REST_Server::READABLE,
+            'callback'            => array($this, 'get_items'),
+            'permission_callback' => array($this, 'get_items_permissions_check'),
+            'args'                => $this->get_collection_params(),
+        ));
 
-            register_rest_route($this->namespace, $this->base, array(
-                'methods'             => WP_REST_Server::CREATABLE,
-                'callback'            => array($this, 'create_item'),
-                'permission_callback' => array($this, 'create_item_permissions_check'),
-                'args'                => $this->get_endpoint_args_for_item_schema( WP_REST_Server::CREATABLE ),
-            ));
+        register_rest_route($this->namespace, $this->base, array(
+            'methods'             => WP_REST_Server::CREATABLE,
+            'callback'            => array($this, 'create_item'),
+            'permission_callback' => array($this, 'create_item_permissions_check'),
+            'args'                => $this->get_endpoint_args_for_item_schema( WP_REST_Server::CREATABLE ),
+        ));
 
-            register_rest_route($this->namespace, $this->base . '/(?P<id>[\d]+)', array(
-                'methods'             => WP_REST_Server::EDITABLE,
-                'callback'            => array($this, 'update_item'),
-                'permission_callback' => array($this, 'update_item_permissions_check'),
-                'args'                => $this->get_endpoint_args_for_item_schema(WP_REST_Server::EDITABLE),
-            ));
+        register_rest_route($this->namespace, $this->base . '/(?P<id>[\d]+)', array(
+            'methods'             => WP_REST_Server::EDITABLE,
+            'callback'            => array($this, 'update_item'),
+            'permission_callback' => array($this, 'update_item_permissions_check'),
+            'args'                => $this->get_endpoint_args_for_item_schema(WP_REST_Server::EDITABLE),
+        ));
 
-            register_rest_route($this->namespace, $this->base . '/roles', array(
-                'methods'             => WP_REST_Server::READABLE,
-                'callback'            => array($this, 'get_roles'),
-                'permission_callback' => array($this, 'get_items_permissions_check'),
-                'args'                => $this->get_collection_params(),
-            ));
+        register_rest_route($this->namespace, $this->base . '/roles', array(
+            'methods'             => WP_REST_Server::READABLE,
+            'callback'            => array($this, 'get_roles'),
+            'permission_callback' => array($this, 'get_items_permissions_check'),
+            'args'                => $this->get_collection_params(),
+        ));
 
-            register_rest_route($this->namespace, $this->base . '/(?P<id>[\d]+)', array(
-                'args' => array(
-                    'id' => array(
-                        'description' => __('Unique identifier for the resource.', 'woocommerce'),
-                        'type'        => 'integer',
-                    ),
+        register_rest_route($this->namespace, $this->base . '/(?P<id>[\d]+)', array(
+            'args' => array(
+                'id' => array(
+                    'description' => __('Unique identifier for the resource.', 'woocommerce'),
+                    'type'        => 'integer',
                 ),
-                array(
-                    'methods'             => WP_REST_Server::READABLE,
-                    'callback'            => array($this, 'get_item'),
-                    'permission_callback' => array($this, 'get_item_permissions_check'),
-                    'args'                => array(
-                        'context' => $this->get_context_param(array('default' => 'view')),
-                    ),
+            ),
+            array(
+                'methods'             => WP_REST_Server::READABLE,
+                'callback'            => array($this, 'get_item'),
+                'permission_callback' => array($this, 'get_item_permissions_check'),
+                'args'                => array(
+                    'context' => $this->get_context_param(array('default' => 'view')),
                 ),
-            ));
-        });
+            ),
+        ));
     }
 
+    /**
+     * @param WP_REST_Request $request
+     * @return array|object|WP_Error|WP_REST_Response|null
+     * @throws Exception
+     */
     public function get_items($request)
     {
         global $wpdb;

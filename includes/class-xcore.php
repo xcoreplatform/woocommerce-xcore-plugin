@@ -4,7 +4,7 @@ defined('ABSPATH') || exit;
 
 class Xcore
 {
-    private          $_version         = '1.5.1';
+    private          $_version         = '1.6.0';
     protected static $_instance        = null;
     protected static $_productInstance = null;
 
@@ -18,16 +18,13 @@ class Xcore
 
     public function __construct()
     {
-        $this->includes();
-        $this->products();
-        $this->customers();
-        $this->orders();
-        $this->refunds();
-        $this->shipping_methods();
-        $this->payment_methods();
-        $this->tax_classes();
         $this->init();
     }
+
+    /**
+     * Initiate rest_api_init and listen for product updates
+     * of a variation and update the date/time
+     */
 
     public function init()
     {
@@ -44,17 +41,31 @@ class Xcore
                 'methods'             => WP_REST_Server::READABLE,
                 'callback'            => array($this, 'xcore_api_version'),
             ));
+
+            $this->includes();
+            $this->init_classes();
         });
     }
 
-    public function xcore_api_version($data)
+    /**
+     * @param WP_REST_Request $request
+     * @return string
+     */
+
+    public function xcore_api_version($request)
     {
         return $this->_version;
     }
 
+    /**
+     * Include all classes
+     */
+
     public function includes()
     {
         include_once dirname(__FILE__) . '/class-xcore-products.php';
+        include_once dirname(__FILE__) . '/class-xcore-product-attributes.php';
+        include_once dirname(__FILE__) . '/class-xcore-product-attribute-terms.php';
         include_once dirname(__FILE__) . '/class-xcore-customers.php';
         include_once dirname(__FILE__) . '/class-xcore-orders.php';
         include_once dirname(__FILE__) . '/class-xcore-refunds.php';
@@ -64,38 +75,25 @@ class Xcore
         include_once dirname(__FILE__) . '/helpers/class-xcore-helper.php';
     }
 
-    public function products()
+    /**
+     * Initiate all classes to register the necessary routes
+     */
+    public function init_classes()
     {
-        Xcore_Products::instance();
-    }
+        $classes = array(
+            'Xcore_Products',
+            'Xcore_Product_Attributes',
+            'Xcore_Product_Attribute_Terms',
+            'Xcore_Customers',
+            'Xcore_Orders',
+            'Xcore_Refunds',
+            'Xcore_Shipping_Methods',
+            'Xcore_Payment_Methods',
+            'Xcore_Tax_Classes'
+        );
 
-    public function customers()
-    {
-        Xcore_Customers::instance();
-    }
-
-    public function orders()
-    {
-        Xcore_Orders::instance();
-    }
-
-    public function refunds()
-    {
-        Xcore_Refunds::instance();
-    }
-
-    public function shipping_methods()
-    {
-        Xcore_Shipping_Methods::instance();
-    }
-
-    public function payment_methods()
-    {
-        Xcore_Payment_Methods::instance();
-    }
-
-    public function tax_classes()
-    {
-        Xcore_Tax_Classes::instance();
+        foreach($classes as $class) {
+            $this->$class = new $class();
+        }
     }
 }

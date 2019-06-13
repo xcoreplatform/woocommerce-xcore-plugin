@@ -22,32 +22,38 @@ class Xcore_Refunds extends WC_REST_Order_Refunds_Controller
         parent::__construct();
     }
 
+    /**
+     * Register all refund routes
+     */
     public function init()
     {
-        add_action('rest_api_init', function () {
-            register_rest_route($this->namespace, $this->base, array(
-                'methods'             => WP_REST_Server::READABLE,
-                'callback'            => array($this, 'get_items'),
-                'permission_callback' => array($this, 'get_items_permissions_check'),
-                'args'                => $this->get_collection_params(),
-            ));
+        register_rest_route($this->namespace, $this->base, array(
+            'methods'             => WP_REST_Server::READABLE,
+            'callback'            => array($this, 'get_items'),
+            'permission_callback' => array($this, 'get_items_permissions_check'),
+            'args'                => $this->get_collection_params(),
+        ));
 
-            register_rest_route($this->namespace, 'orders' . '/(?P<order_id>[\d]+)' . '/' . $this->base . '/(?P<id>[\d]+)', array(
-                'methods'             => WP_REST_Server::READABLE,
-                'callback'            => array($this, 'get_item'),
-                'permission_callback' => array($this, 'get_item_permissions_check'),
-                'args'                => $this->get_collection_params(),
-            ));
+        register_rest_route($this->namespace, 'orders' . '/(?P<order_id>[\d]+)' . '/' . $this->base . '/(?P<id>[\d]+)', array(
+            'methods'             => WP_REST_Server::READABLE,
+            'callback'            => array($this, 'get_item'),
+            'permission_callback' => array($this, 'get_item_permissions_check'),
+            'args'                => $this->get_collection_params(),
+        ));
 
-            register_rest_route($this->namespace, 'orders' . '/(?P<order_id>[\d]+)' . '/' . $this->base, array(
-                'methods'             => WP_REST_Server::READABLE,
-                'callback'            => array($this, 'get_items'),
-                'permission_callback' => array($this, 'get_items_permissions_check'),
-                'args'                => $this->get_collection_params(),
-            ));
-        });
+        register_rest_route($this->namespace, 'orders' . '/(?P<order_id>[\d]+)' . '/' . $this->base, array(
+            'methods'             => WP_REST_Server::READABLE,
+            'callback'            => array($this, 'get_items'),
+            'permission_callback' => array($this, 'get_items_permissions_check'),
+            'args'                => $this->get_collection_params(),
+        ));
     }
 
+    /**
+     * @param WP_REST_Request $request
+     * @return array|WP_Error|WP_REST_Response
+     * @throws Exception
+     */
     public function get_items($request)
     {
         if (isset($request['order_id'])) {
@@ -86,6 +92,10 @@ class Xcore_Refunds extends WC_REST_Order_Refunds_Controller
         return $result;
     }
 
+    /**
+     * @param WP_REST_Request $request
+     * @return mixed|void|WP_Error|WP_REST_Response
+     */
     public function get_item($request)
     {
         $refund_object = $this->get_object($request['id']);
@@ -108,6 +118,11 @@ class Xcore_Refunds extends WC_REST_Order_Refunds_Controller
         return $response;
     }
 
+    /**
+     * @param WC_Data $object
+     * @param WP_REST_Request $request
+     * @return mixed|void|WP_Error|WP_REST_Response
+     */
     public function prepare_object_for_response($object, $request)
     {
         $this->request       = $request;
@@ -152,6 +167,10 @@ class Xcore_Refunds extends WC_REST_Order_Refunds_Controller
         return apply_filters("woocommerce_rest_prepare_{$this->post_type}_object", $response, $object, $request);
     }
 
+    /**
+     * @param WC_Data $object
+     * @return array
+     */
     protected function get_formatted_item_data($object)
     {
         $data              = $object->get_data();

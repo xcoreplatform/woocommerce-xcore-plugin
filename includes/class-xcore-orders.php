@@ -21,34 +21,37 @@ class Xcore_Orders extends WC_REST_Orders_Controller
         $this->init();
     }
 
+    /**
+     * Register all order routes
+     */
     public function init()
     {
-        add_action('rest_api_init', function () {
-            register_rest_route($this->namespace, $this->base, array(
-                'methods'             => WP_REST_Server::READABLE,
-                'callback'            => array($this, 'get_items'),
-                'permission_callback' => array($this, 'get_items_permissions_check'),
-                'args'                => $this->get_collection_params(),
-            ));
+        register_rest_route($this->namespace, $this->base, array(
+            'methods'             => WP_REST_Server::READABLE,
+            'callback'            => array($this, 'get_items'),
+            'permission_callback' => array($this, 'get_items_permissions_check'),
+            'args'                => $this->get_collection_params(),
+        ));
 
-            register_rest_route($this->namespace, $this->base . '/statuses', array(
-                'methods'             => WP_REST_Server::READABLE,
-                'callback'            => array($this, 'get_orders_statuses'),
-                'permission_callback' => array($this, 'get_items_permissions_check'),
-                'args'                => $this->get_collection_params(),
-            ));
+        register_rest_route($this->namespace, $this->base . '/statuses', array(
+            'methods'             => WP_REST_Server::READABLE,
+            'callback'            => array($this, 'get_orders_statuses'),
+            'permission_callback' => array($this, 'get_items_permissions_check'),
+            'args'                => $this->get_collection_params(),
+        ));
 
-            register_rest_route($this->namespace, $this->base . '/(?P<id>[\d]+)', array(
-                'methods'             => WP_REST_Server::READABLE,
-                'callback'            => array($this, 'get_item'),
-                'permission_callback' => array($this, 'get_item_permissions_check'),
-                'args'                => $this->get_collection_params(),
-            ));
-        });
-
-
+        register_rest_route($this->namespace, $this->base . '/(?P<id>[\d]+)', array(
+            'methods'             => WP_REST_Server::READABLE,
+            'callback'            => array($this, 'get_item'),
+            'permission_callback' => array($this, 'get_item_permissions_check'),
+            'args'                => $this->get_collection_params(),
+        ));
     }
 
+    /**
+     * @param WP_REST_Request $request
+     * @return WP_Error|WP_REST_Response
+     */
     public function get_item($request)
     {
         $response = parent::get_item($request);
@@ -234,6 +237,11 @@ class Xcore_Orders extends WC_REST_Orders_Controller
         return $data;
     }
 
+    /**
+     * @param WP_REST_Request $request
+     * @return array|WP_Error|WP_REST_Response
+     * @throws Exception
+     */
     public function get_items($request)
     {
         $limit = (int)$request['limit'] ?: 50;
@@ -267,6 +275,9 @@ class Xcore_Orders extends WC_REST_Orders_Controller
         return $result;
     }
 
+    /**
+     * @return array
+     */
     public function get_orders_statuses()
     {
         return wc_get_order_statuses();
