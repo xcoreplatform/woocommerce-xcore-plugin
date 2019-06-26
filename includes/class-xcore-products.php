@@ -86,6 +86,29 @@ class Xcore_Products extends WC_REST_Products_Controller
     }
 
     /**
+     * Sadly there's no way of obtaining a list with all available product types, including variations. This allows
+     * us to bypass the problem if a customer wants to process variations as well without impacting performance.
+     *
+     * @param WP_REST_Request $request
+     * @return WP_Error|WP_REST_Response
+     */
+
+    public function get_item($request)
+    {
+        $result = parent::get_item($request);
+        $class = WC_Product_Factory::get_classname_from_product_type($result->data['type']);
+        $object = new $class;
+
+        if(is_subclass_of($object, 'WC_Product_Variation')) {
+            $result->data['xcore_is_variation'] = true;
+        } else {
+            $result->data['xcore_is_variation'] = false;
+        }
+
+        return $result;
+    }
+
+    /**
      * Returns an array with item information
      *
      * @param WP_REST_Request $request Full data about the request.
@@ -172,7 +195,14 @@ class Xcore_Products extends WC_REST_Products_Controller
         $object = parent::get_object($product_id);
 
         if($object) {
-            return parent::prepare_object_for_response($object, $request);
+            $result = parent::prepare_object_for_response($object, $request);
+
+            if(is_subclass_of($object, 'WC_Product_Variation')) {
+                $result->data['xcore_is_variation'] = true;
+            } else {
+                $result->data['xcore_is_variation'] = false;
+            }
+            return $result;
         }
         return new WP_Error( '404', 'No item found with SKU: '. $product_reference, array( 'status' => '404' ));
     }
@@ -183,6 +213,8 @@ class Xcore_Products extends WC_REST_Products_Controller
      */
     public function get_product_types($request)
     {
+        $x = WC_Product_Factory::get_classname_from_product_typ('variable_subscription');
+        return $x;
         return wc_get_product_types();
     }
 

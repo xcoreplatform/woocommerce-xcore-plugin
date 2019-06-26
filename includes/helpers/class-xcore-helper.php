@@ -13,7 +13,7 @@ class Xcore_Helper
         if(array_key_exists($key, $data)) {
             foreach($data[$key] as &$item) {
                 foreach($item['taxes'] as &$tax) {
-                    $rates = ($key == 'shipping_lines') ? WC_Tax::get_shipping_tax_rates() : WC_Tax::get_rates( $item['tax_class']);
+                    $rates = ($key == 'shipping_lines' && WC()->cart) ? WC_Tax::get_shipping_tax_rates() : WC_Tax::get_rates( $item['tax_class']);
                     $rate_id = $tax['id'] ?? null;
                     $rate = 0.0000;
 
