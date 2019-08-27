@@ -96,6 +96,10 @@ class Xcore_Products extends WC_REST_Products_Controller
     public function get_item($request)
     {
         $result = parent::get_item($request);
+        if(is_wp_error($result)) {
+            return $result;
+        }
+
         $class = WC_Product_Factory::get_classname_from_product_type($result->data['type']);
         $object = new $class;
 
@@ -213,8 +217,6 @@ class Xcore_Products extends WC_REST_Products_Controller
      */
     public function get_product_types($request)
     {
-        $x = WC_Product_Factory::get_classname_from_product_typ('variable_subscription');
-        return $x;
         return wc_get_product_types();
     }
 

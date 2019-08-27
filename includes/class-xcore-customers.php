@@ -121,9 +121,10 @@ class Xcore_Customers extends WC_REST_Customers_Controller
         $sql     = $wpdb->prepare($q, array($key, $value, $value, $limit));
         $results = $wpdb->get_results($sql, ARRAY_A);
 
+
         foreach ($results as $key => $value) {
-            $results[$key]['date_created']  = new WC_DateTime($value['date_created']);
-            $results[$key]['date_modified'] = new WC_DateTime($value['date_modified']);
+            $results[$key]['date_created']  = (function_exists('wc_rest_prepare_date_response')) ? wc_rest_prepare_date_response($value['date_created']) : new WC_DateTime($value['date_created']);
+            $results[$key]['date_modified'] = (function_exists('wc_rest_prepare_date_response')) ? wc_rest_prepare_date_response($value['date_modified']) : new WC_DateTime($value['date_modified']);
         }
         return $results;
     }
