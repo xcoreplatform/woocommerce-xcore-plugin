@@ -2,13 +2,13 @@
 
 defined( 'ABSPATH' ) || exit;
 
-class Xcore_Helper
+class Xcore_Helper extends Xcore_Data_Helper
 {
     /**
      * @param $data
      * @param $key
      */
-    static public function add_tax_rate(&$data, $key)
+    public function add_tax_rate(&$data, $key)
     {
         if(array_key_exists($key, $data)) {
             foreach($data[$key] as &$item) {
@@ -28,5 +28,17 @@ class Xcore_Helper
                 }
             }
         }
+    }
+
+    private function set_dummy_prop($prop, $data = null)
+    {
+        $this->data[$prop] = $data;
+    }
+
+    public function convertDate($prop, $date)
+    {
+        $this->set_dummy_prop($prop);
+        $this->set_date_prop($prop, $date);
+        return wc_rest_prepare_date_response($this->data[$prop]);
     }
 }

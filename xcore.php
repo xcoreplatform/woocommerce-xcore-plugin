@@ -4,7 +4,7 @@ include_once( ABSPATH . 'wp-admin/includes/plugin.php' );
    Plugin Name: xCore Rest API extension
    Plugin URI: http://xcore.dealer4dealer.nl
    description: Extend WC Rest API to support xCore requests
-   @Version: 1.6.2
+   @Version: 1.6.3
    @Author: Dealer4Dealer
    Author URI: http://www.dealer4dealer.nl
    Requires at least: 4.7.5
@@ -26,17 +26,15 @@ if (!is_plugin_active( 'woocommerce/woocommerce.php', apply_filters( 'active_plu
     return;
 }
 
-if (!class_exists('Xcore')) {
+add_action('woocommerce_loaded', function() {
+    include_once dirname(__FILE__) . '/includes/helpers/abstract-xcore-data-helper.php';
+    include_once dirname(__FILE__) . '/includes/helpers/class-xcore-helper.php';
     include_once dirname(__FILE__) . '/includes/class-xcore.php';
-}
 
-add_action('plugins_loaded', 'run_xcore', 10, 1);
-function run_xcore()
-{
-    if (class_exists('Xcore')) {
-        return Xcore::instance();
+    if(class_exists('Xcore') ) {
+        return Xcore::get_instance();
     }
-}
+});
 
 function woocommerce_not_activated() {
     ?>

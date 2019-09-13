@@ -3,21 +3,15 @@ defined('ABSPATH') || exit;
 
 class Xcore_Customers extends WC_REST_Customers_Controller
 {
-    protected static $_instance = null;
-    public           $version   = '1';
-    public           $namespace = 'wc-xcore/v1';
-    public           $base      = 'customers';
+    protected static $_instance    = null;
+    public           $version      = '1';
+    public           $namespace    = 'wc-xcore/v1';
+    public           $base         = 'customers';
+    private          $_xcoreHelper = null;
 
-    public static function instance()
+    public function __construct($helper)
     {
-        if (is_null(self::$_instance)) {
-            self::$_instance = new self();
-        }
-        return self::$_instance;
-    }
-
-    public function __construct()
-    {
+        $this->_xcoreHelper = $helper;
         $this->init();
     }
 
@@ -37,7 +31,7 @@ class Xcore_Customers extends WC_REST_Customers_Controller
             'methods'             => WP_REST_Server::CREATABLE,
             'callback'            => array($this, 'create_item'),
             'permission_callback' => array($this, 'create_item_permissions_check'),
-            'args'                => $this->get_endpoint_args_for_item_schema( WP_REST_Server::CREATABLE ),
+            'args'                => $this->get_endpoint_args_for_item_schema(WP_REST_Server::CREATABLE),
         ));
 
         register_rest_route($this->namespace, $this->base . '/(?P<id>[\d]+)', array(
@@ -84,14 +78,15 @@ class Xcore_Customers extends WC_REST_Customers_Controller
         /**
          * If e-mail is given with the request, let woocommerce handle it.
          */
-        if($request['email']) {
+        if ($request['email']) {
             return parent::get_items($request);
         }
 
         $limit = (int)$request['limit'] ?: 50;
 
-        $key       = 'date_modified';
-        $value     = $request['date_modified'] ?: 0;
+        $key   = 'date_modified';
+        $value = $request['date_modified'] ?: 0;
+        $value = str_ireplace('T', ' ', $value);
 
         $wp_users_table = $wpdb->prefix . 'users';
         $wp_user_meta   = $wpdb->prefix . 'usermeta';
@@ -102,7 +97,7 @@ class Xcore_Customers extends WC_REST_Customers_Controller
 	    user_registered as date_created, 
 	    CASE 
 	    WHEN meta_value IS NOT NULL
-	    THEN FROM_UNIXTIME(meta_value, '%%Y-%%m-%%d %%h:%%i:%%s')
+	    THEN meta_value
 	    ELSE user_registered END
 	    AS %s
 		FROM {$wp_users_table}
@@ -121,10 +116,9 @@ class Xcore_Customers extends WC_REST_Customers_Controller
         $sql     = $wpdb->prepare($q, array($key, $value, $value, $limit));
         $results = $wpdb->get_results($sql, ARRAY_A);
 
-
         foreach ($results as $key => $value) {
-            $results[$key]['date_created']  = (function_exists('wc_rest_prepare_date_response')) ? wc_rest_prepare_date_response($value['date_created']) : new WC_DateTime($value['date_created']);
-            $results[$key]['date_modified'] = (function_exists('wc_rest_prepare_date_response')) ? wc_rest_prepare_date_response($value['date_modified']) : new WC_DateTime($value['date_modified']);
+            $results[$key]['date_created'] = $value['date_created'];
+            $results[$key]['date_modified'] = $this->_xcoreHelper->convertDate('date_modified', $value['date_modified']);
         }
         return $results;
     }

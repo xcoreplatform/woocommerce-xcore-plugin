@@ -7,17 +7,11 @@ class Xcore_Orders extends WC_REST_Orders_Controller
     public           $version   = '1';
     public           $namespace = 'wc-xcore/v1';
     public           $base      = 'orders';
+    private          $_xcoreHelper = null;
 
-    public static function instance()
+    public function __construct($helper)
     {
-        if (is_null(self::$_instance)) {
-            self::$_instance = new self();
-        }
-        return self::$_instance;
-    }
-
-    public function __construct()
-    {
+        $this->_xcoreHelper = $helper;
         $this->init();
     }
 
@@ -58,7 +52,7 @@ class Xcore_Orders extends WC_REST_Orders_Controller
         $types = ['line_items', 'shipping_lines', 'fee_lines'];
 
         foreach($types as $type) {
-            Xcore_Helper::add_tax_rate($response->data, $type);
+            $this->_xcoreHelper->add_tax_rate($response->data, $type);
         }
 
         return $response;

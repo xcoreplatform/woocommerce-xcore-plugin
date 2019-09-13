@@ -3,21 +3,15 @@ defined('ABSPATH') || exit;
 
 class Xcore_Products extends WC_REST_Products_Controller
 {
-    protected static $_instance = null;
-    public           $version   = '1';
-    public           $namespace = 'wc-xcore/v1';
-    public           $base      = 'products';
+    protected static $_instance    = null;
+    public           $version      = '1';
+    public           $namespace    = 'wc-xcore/v1';
+    public           $base         = 'products';
+    private          $_xcoreHelper = null;
 
-    public static function instance()
+    public function __construct($helper)
     {
-        if (is_null(self::$_instance)) {
-            self::$_instance = new self();
-        }
-        return self::$_instance;
-    }
-
-    public function __construct()
-    {
+        $this->_xcoreHelper = $helper;
         parent::__construct();
         $this->init();
     }
@@ -36,9 +30,9 @@ class Xcore_Products extends WC_REST_Products_Controller
 
         register_rest_route($this->namespace, $this->base, array(
             'methods'             => WP_REST_Server::CREATABLE,
-            'callback'            => array( $this, 'create_item' ),
-            'permission_callback' => array( $this, 'create_item_permissions_check' ),
-            'args'                => $this->get_endpoint_args_for_item_schema( WP_REST_Server::CREATABLE ),
+            'callback'            => array($this, 'create_item'),
+            'permission_callback' => array($this, 'create_item_permissions_check'),
+            'args'                => $this->get_endpoint_args_for_item_schema(WP_REST_Server::CREATABLE),
         ));
 
         register_rest_route($this->namespace, $this->base, array(
@@ -96,14 +90,14 @@ class Xcore_Products extends WC_REST_Products_Controller
     public function get_item($request)
     {
         $result = parent::get_item($request);
-        if(is_wp_error($result)) {
+        if (is_wp_error($result)) {
             return $result;
         }
 
-        $class = WC_Product_Factory::get_classname_from_product_type($result->data['type']);
+        $class  = WC_Product_Factory::get_classname_from_product_type($result->data['type']);
         $object = new $class;
 
-        if(is_subclass_of($object, 'WC_Product_Variation')) {
+        if ($object instanceof WC_Product_Variation) {
             $result->data['xcore_is_variation'] = true;
         } else {
             $result->data['xcore_is_variation'] = false;
@@ -161,22 +155,22 @@ class Xcore_Products extends WC_REST_Products_Controller
     {
         $object = $this->get_object((int)$request['id']);
 
-        if(!$object) {
-            return new WP_Error( '404', 'No item found with ID: '. $request['id'], array( 'status' => '404' ));
+        if (!$object) {
+            return new WP_Error('404', 'No item found with ID: ' . $request['id'], array('status' => '404'));
         }
 
         if ($object->is_type('variation')) {
             $product = new WC_Product_Variation($request['id']);
 
-            if(isset($request['stock_quantity'])) {
+            if (isset($request['stock_quantity'])) {
                 $product->set_stock_quantity($request['stock_quantity']);
             }
 
-            if(isset($request['manage_stock'])) {
+            if (isset($request['manage_stock'])) {
                 $product->set_manage_stock($request['manage_stock']);
             }
 
-            if(isset($request['backorders'])) {
+            if (isset($request['backorders'])) {
                 $product->set_backorders($request['backorders']);
             }
 
@@ -195,20 +189,20 @@ class Xcore_Products extends WC_REST_Products_Controller
     public function find_item_by_sku($request)
     {
         $product_reference = urldecode($request['id']);
-        $product_id = wc_get_product_id_by_sku($product_reference);
-        $object = parent::get_object($product_id);
+        $product_id        = wc_get_product_id_by_sku($product_reference);
+        $object            = parent::get_object($product_id);
 
-        if($object) {
+        if ($object) {
             $result = parent::prepare_object_for_response($object, $request);
 
-            if(is_subclass_of($object, 'WC_Product_Variation')) {
+            if (is_subclass_of($object, 'WC_Product_Variation')) {
                 $result->data['xcore_is_variation'] = true;
             } else {
                 $result->data['xcore_is_variation'] = false;
             }
             return $result;
         }
-        return new WP_Error( '404', 'No item found with SKU: '. $product_reference, array( 'status' => '404' ));
+        return new WP_Error('404', 'No item found with SKU: ' . $product_reference, array('status' => '404'));
     }
 
     /**
@@ -278,12 +272,11 @@ class Xcore_Products extends WC_REST_Products_Controller
             $term_id = intval($term->term_id);
 
             // Get category display type
-            $display_type = function_exists( 'get_term_meta' ) ? get_term_meta( $term_id, 'display_type', true ) : get_metadata( 'woocommerce_term', $term_id, 'display_type', true);
-
+            $display_type = function_exists('get_term_meta') ? get_term_meta($term_id, 'display_type', true) : get_metadata('woocommerce_term', $term_id, 'display_type', true);
 
             // Get category image
-            $image = '';
-            $image_id = function_exists( 'get_term_meta' ) ? get_term_meta( $term_id, 'thumbnail_id', true ) : get_metadata( 'woocommerce_term', $term_id, 'thumbnail_id', true);
+            $image    = '';
+            $image_id = function_exists('get_term_meta') ? get_term_meta($term_id, 'thumbnail_id', true) : get_metadata('woocommerce_term', $term_id, 'thumbnail_id', true);
             if ($image_id) {
                 $image = wp_get_attachment_url($image_id);
             }

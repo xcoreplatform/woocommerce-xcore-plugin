@@ -7,17 +7,11 @@ class Xcore_Refunds extends WC_REST_Order_Refunds_Controller
     public           $version   = '1';
     public           $namespace = 'wc-xcore/v1';
     public           $base      = 'refunds';
+    private          $_xcoreHelper = null;
 
-    public static function instance()
+    public function __construct($helper)
     {
-        if (is_null(self::$_instance)) {
-            self::$_instance = new self();
-        }
-        return self::$_instance;
-    }
-
-    public function __construct()
-    {
+        $this->_xcoreHelper = $helper;
         $this->init();
         parent::__construct();
     }

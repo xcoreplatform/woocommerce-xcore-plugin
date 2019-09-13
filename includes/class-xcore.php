@@ -4,11 +4,11 @@ defined('ABSPATH') || exit;
 
 class Xcore
 {
-    private          $_version         = '1.6.2';
-    protected static $_instance        = null;
-    protected static $_productInstance = null;
+    private        $_version     = '1.6.3';
+    private static $_instance    = null;
+    private        $_xcoreHelper = null;
 
-    public static function instance()
+    public static function get_instance()
     {
         if (is_null(self::$_instance)) {
             self::$_instance = new self();
@@ -16,8 +16,9 @@ class Xcore
         return self::$_instance;
     }
 
-    public function __construct()
+    private function __construct()
     {
+        $this->_xcoreHelper = new Xcore_Helper();
         $this->init();
     }
 
@@ -38,8 +39,8 @@ class Xcore
 
         add_action('rest_api_init', function () {
             register_rest_route('wc-xcore/v1', 'version', array(
-                'methods'             => WP_REST_Server::READABLE,
-                'callback'            => array($this, 'xcore_api_version'),
+                'methods'  => WP_REST_Server::READABLE,
+                'callback' => array($this, 'xcore_api_version'),
             ));
 
             $this->includes();
@@ -72,7 +73,6 @@ class Xcore
         include_once dirname(__FILE__) . '/class-xcore-shipping-methods.php';
         include_once dirname(__FILE__) . '/class-xcore-payment-methods.php';
         include_once dirname(__FILE__) . '/class-xcore-tax-classes.php';
-        include_once dirname(__FILE__) . '/helpers/class-xcore-helper.php';
     }
 
     /**
@@ -92,8 +92,8 @@ class Xcore
             'Xcore_Tax_Classes'
         );
 
-        foreach($classes as $class) {
-            $this->$class = new $class();
+        foreach ($classes as $class) {
+            $this->$class = new $class($this->_xcoreHelper);
         }
     }
 }
