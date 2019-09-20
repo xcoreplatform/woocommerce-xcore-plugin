@@ -51,9 +51,15 @@ class Xcore_Orders extends WC_REST_Orders_Controller
         $response = parent::get_item($request);
         $types = ['line_items', 'shipping_lines', 'fee_lines'];
 
-        foreach($types as $type) {
-            $this->_xcoreHelper->add_tax_rate($response->data, $type);
+        /*
+         * As of version 3.7 WooCommerce will add the tax rate, so we don't have to.
+         */
+        if(version_compare(WC_VERSION, '3.7', '<')) {
+            foreach($types as $type) {
+                $this->_xcoreHelper->add_tax_rate($response->data, $type);
+            }
         }
+
 
         return $response;
     }

@@ -195,7 +195,7 @@ class Xcore_Products extends WC_REST_Products_Controller
         if ($object) {
             $result = parent::prepare_object_for_response($object, $request);
 
-            if (is_subclass_of($object, 'WC_Product_Variation')) {
+            if ($object instanceof WC_Product_Variation) {
                 $result->data['xcore_is_variation'] = true;
             } else {
                 $result->data['xcore_is_variation'] = false;
