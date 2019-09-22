@@ -95,7 +95,7 @@ class Xcore_Refunds extends WC_REST_Order_Refunds_Controller
         $refund_object = $this->get_object($request['id']);
 
         $request['id'] = $request['order_id'];
-        $orderInstance                    = new Xcore_Orders();
+        $orderInstance = new Xcore_Orders($this->_xcoreHelper);
         $order = $orderInstance->get_item($request);
         $orderData = $order->get_data();
 
@@ -106,7 +106,7 @@ class Xcore_Refunds extends WC_REST_Order_Refunds_Controller
         $types = ['line_items', 'shipping_lines', 'fee_lines'];
 
         foreach($types as $type) {
-            Xcore_Helper::add_tax_rate($response->data, $type);
+            $this->_xcoreHelper->add_tax_rate($response->data, $type);
         }
 
         return $response;
@@ -138,13 +138,6 @@ class Xcore_Refunds extends WC_REST_Order_Refunds_Controller
 
         // Wrap the data in a response object.
         $response = rest_ensure_response($data);
-
-        // Add original order to response
-        $orderInstance                    = new Xcore_Orders();
-        $orderInstance->request           = $request;
-        $order_data                       = $orderInstance->get_formatted_item_data($order);
-        $response->data['parent_id']      = $order->get_id();
-        $response->data['original_order'] = $order_data;
 
         $response->add_links($this->prepare_links($object, $request));
 
