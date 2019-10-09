@@ -104,7 +104,7 @@ class Xcore_Customers extends WC_REST_Customers_Controller
                 WHERE meta1.meta_key = 'last_update'
             ) AS meta ON (users.ID = meta.user_id) 
             HAVING date_modified > %s
-            ORDER BY 'date_modified' ASC LIMIT %d
+            ORDER BY date_modified ASC LIMIT %d
 		";
 
         $sql     = $wpdb->prepare($q, array($key, $value, $value, $limit));
