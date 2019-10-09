@@ -92,25 +92,19 @@ class Xcore_Customers extends WC_REST_Customers_Controller
         $wp_user_meta   = $wpdb->prefix . 'usermeta';
 
         $q = "
-   		SELECT 
-		ID as id, 		  
-	    user_registered as date_created, 
-	    CASE 
-	    WHEN meta_value IS NOT NULL
-	    THEN meta_value
-	    ELSE user_registered END
-	    AS %s
-		FROM {$wp_users_table}
-			AS users 
-		    LEFT JOIN (
-				SELECT user_id, meta_key, meta1.meta_value
-				FROM {$wp_user_meta} AS meta1 
-		        WHERE meta1.meta_key = 'last_update'
-		        ) as meta on users.ID = meta.user_id 
-			WHERE users.user_registered > %s
-		    OR (FROM_UNIXTIME(meta.meta_value, '%%Y-%%m-%%d %%h:%%i:%%s') > %s)
-	    
-		ORDER BY $key ASC LIMIT %d
+            SELECT ID as id, user_registered as date_created, 
+                CASE 
+                    WHEN meta_value IS NOT NULL THEN FROM_UNIXTIME(meta_value)
+                    ELSE user_registered 
+                END AS date_modified
+            FROM {$wp_users_table} AS users 
+            LEFT JOIN (
+                SELECT user_id, meta_key, meta1.meta_value
+                FROM {$wp_user_meta} AS meta1 
+                WHERE meta1.meta_key = 'last_update'
+            ) AS meta ON (users.ID = meta.user_id) 
+            HAVING date_modified > %s
+            ORDER BY 'date_modified' ASC LIMIT %d
 		";
 
         $sql     = $wpdb->prepare($q, array($key, $value, $value, $limit));
