@@ -84,8 +84,6 @@ class Xcore_Customers extends WC_REST_Customers_Controller
 
         $limit = (int)$request['limit'] ?: 50;
 
-        $timezoneOffset = wc_timezone_offset();
-
         $value = $request['date_modified'] ?: 0;
         $value = str_ireplace('T', ' ', $value);
 
@@ -95,7 +93,7 @@ class Xcore_Customers extends WC_REST_Customers_Controller
         $q = "
             SELECT ID as id, user_registered as date_created, 
                 CASE 
-                    WHEN meta_value IS NOT NULL THEN DATE_ADD(FROM_UNIXTIME(meta_value), INTERVAL %s SECOND)
+                    WHEN meta_value IS NOT NULL THEN FROM_UNIXTIME(meta_value)
                     ELSE user_registered 
                 END AS date_modified
             FROM {$wp_users_table} AS users 
@@ -108,13 +106,9 @@ class Xcore_Customers extends WC_REST_Customers_Controller
             ORDER BY date_modified ASC LIMIT %d
 		";
 
-        $sql     = $wpdb->prepare($q, array($timezoneOffset, $value, $limit));
+        $sql     = $wpdb->prepare($q, array($value, $limit));
         $results = $wpdb->get_results($sql, ARRAY_A);
 
-        foreach ($results as $key => $value) {
-            $results[$key]['date_created'] = $value['date_created'];
-            $results[$key]['date_modified'] = $this->_xcoreHelper->convertDate('date_modified', $value['date_modified']);
-        }
         return $results;
     }
 
