@@ -49,6 +49,13 @@ class Xcore_Products extends WC_REST_Products_Controller
             'args'                => $this->get_collection_params(),
         ));
 
+        register_rest_route($this->namespace, $this->base . '/allby/sku/(?P<sku>[\S]+)', array(
+            'methods'             => WP_REST_Server::READABLE,
+            'callback'            => array($this, 'get_all_items'),
+            'permission_callback' => array($this, 'get_item_permissions_check'),
+            'args'                => $this->get_collection_params(),
+        ));
+
         register_rest_route($this->namespace, $this->base . '/findby/sku/(?P<id>[\S]+)', array(
             'methods'             => WP_REST_Server::READABLE,
             'callback'            => array($this, 'find_item_by_sku'),
@@ -145,6 +152,16 @@ class Xcore_Products extends WC_REST_Products_Controller
         }
 
         return $result;
+    }
+
+    public function get_all_items($request)
+    {
+        if(!isset($request['sku'])) {
+            return new WP_Error('404', 'No SKU set', array('status' => '404'));
+        }
+        $request['per_page'] = 50;
+
+        return parent::get_items($request);
     }
 
     /**
