@@ -66,6 +66,13 @@ class Xcore_Customers extends WC_REST_Customers_Controller
         ));
     }
 
+    public function get_roles($request)
+    {
+        global $wp_roles;
+        return $wp_roles->role_names;
+    }
+
+
     /**
      * @param WP_REST_Request $request
      * @return array|object|WP_Error|WP_REST_Response|null
