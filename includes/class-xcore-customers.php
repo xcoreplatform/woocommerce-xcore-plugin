@@ -84,7 +84,8 @@ class Xcore_Customers extends WC_REST_Customers_Controller
 
         $limit = (int)$request['limit'] ?: 50;
 
-        $key   = 'date_modified';
+        $timezoneOffset = wc_timezone_offset();
+
         $value = $request['date_modified'] ?: 0;
         $value = str_ireplace('T', ' ', $value);
 
@@ -92,34 +93,24 @@ class Xcore_Customers extends WC_REST_Customers_Controller
         $wp_user_meta   = $wpdb->prefix . 'usermeta';
 
         $q = "
-   		SELECT 
-		ID as id, 		  
-	    user_registered as date_created, 
-	    CASE 
-	    WHEN meta_value IS NOT NULL
-	    THEN meta_value
-	    ELSE user_registered END
-	    AS %s
-		FROM {$wp_users_table}
-			AS users 
-		    LEFT JOIN (
-				SELECT user_id, meta_key, meta1.meta_value
-				FROM {$wp_user_meta} AS meta1 
-		        WHERE meta1.meta_key = 'last_update'
-		        ) as meta on users.ID = meta.user_id 
-			WHERE users.user_registered > %s
-		    OR (FROM_UNIXTIME(meta.meta_value, '%%Y-%%m-%%d %%h:%%i:%%s') > %s)
-	    
-		ORDER BY $key ASC LIMIT %d
-		";
+            SELECT ID as id, user_registered as date_created, 
+                CASE 
+                    WHEN meta_value IS NOT NULL THEN DATE_SUB(FROM_UNIXTIME(meta_value), INTERVAL %s SECOND)
+                    ELSE user_registered 
+                END AS date_modified
+            FROM {$wp_users_table} AS users 
+            LEFT JOIN (
+                SELECT user_id, meta_key, meta1.meta_value
+                FROM {$wp_user_meta} AS meta1 
+                WHERE meta1.meta_key = 'last_update'
+            ) AS meta ON (users.ID = meta.user_id) 
+            HAVING date_modified > %s
+            ORDER BY date_modified ASC LIMIT %d
+        ";
 
-        $sql     = $wpdb->prepare($q, array($key, $value, $value, $limit));
+        $sql     = $wpdb->prepare($q, array($timezoneOffset, $value, $limit));
         $results = $wpdb->get_results($sql, ARRAY_A);
 
-        foreach ($results as $key => $value) {
-            $results[$key]['date_created'] = $value['date_created'];
-            $results[$key]['date_modified'] = $this->_xcoreHelper->convertDate('date_modified', $value['date_modified']);
-        }
         return $results;
     }
 
