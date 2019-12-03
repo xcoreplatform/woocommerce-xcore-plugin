@@ -42,6 +42,13 @@ class Xcore_Products extends WC_REST_Products_Controller
             'args'                => $this->get_endpoint_args_for_item_schema(WP_REST_Server::EDITABLE),
         ));
 
+        register_rest_route($this->namespace, $this->base. '/batch' , array(
+            'methods'             => WP_REST_Server::EDITABLE,
+            'callback'            => array($this, 'batch_items'),
+            'permission_callback' => array($this, 'batch_items_permissions_check'),
+            'args'                => $this->get_endpoint_args_for_item_schema(WP_REST_Server::EDITABLE),
+        ));
+
         register_rest_route($this->namespace, $this->base . '/(?P<id>[\d]+)', array(
             'methods'             => WP_REST_Server::READABLE,
             'callback'            => array($this, 'get_item'),
@@ -159,7 +166,6 @@ class Xcore_Products extends WC_REST_Products_Controller
         if(!isset($request['sku'])) {
             return new WP_Error('404', 'No SKU set', array('status' => '404'));
         }
-        $request['per_page'] = 50;
 
         return parent::get_items($request);
     }

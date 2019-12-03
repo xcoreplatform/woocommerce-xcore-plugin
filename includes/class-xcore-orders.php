@@ -40,6 +40,13 @@ class Xcore_Orders extends WC_REST_Orders_Controller
             'permission_callback' => array($this, 'get_item_permissions_check'),
             'args'                => $this->get_collection_params(),
         ));
+
+        register_rest_route($this->namespace, $this->base . '/(?P<id>[\d]+)', array(
+            'methods'             => WP_REST_Server::EDITABLE,
+            'callback'            => array($this, 'update_item'),
+            'permission_callback' => array($this, 'update_item_permissions_check'),
+            'args'                => $this->get_collection_params(),
+        ));
     }
 
     /**
