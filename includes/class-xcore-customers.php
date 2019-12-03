@@ -96,8 +96,8 @@ class Xcore_Customers extends WC_REST_Customers_Controller
         $value = $request['date_modified'] ?: 0;
         $value = str_ireplace('T', ' ', $value);
 
-        $wp_users_table = $wpdb->prefix . 'users';
-        $wp_user_meta   = $wpdb->prefix . 'usermeta';
+        $wp_users_table = $wpdb->users;
+        $wp_user_meta   = $wpdb->usermeta;
 
         $q = "
             SELECT ID as id, user_registered as date_created, 
