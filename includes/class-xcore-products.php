@@ -109,7 +109,7 @@ class Xcore_Products extends WC_REST_Products_Controller
         }
 
         $class  = WC_Product_Factory::get_classname_from_product_type($result->data['type']);
-        $object = new $class;
+        $object = new $class(null);
 
         if ($object instanceof WC_Product_Variation) {
             $result->data['xcore_is_variation'] = true;
