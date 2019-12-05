@@ -94,8 +94,8 @@ class Xcore_Products extends WC_REST_Products_Controller
     }
 
     /**
-     * Sadly there's no way of obtaining a list with all available product types, including variations. This allows
-     * us to bypass the problem if a customer wants to process variations as well without impacting performance.
+     * Sadly there's no way of obtaining a list with all available product types, including variations. The logic below
+     * allows us to bypass the problem when a customer wants to process variations as well, without impacting performance.
      *
      * @param WP_REST_Request $request
      * @return WP_Error|WP_REST_Response
@@ -109,7 +109,7 @@ class Xcore_Products extends WC_REST_Products_Controller
         }
 
         $class  = WC_Product_Factory::get_classname_from_product_type($result->data['type']);
-        $object = new $class;
+        $object = new $class(null);
 
         if ($object instanceof WC_Product_Variation) {
             $result->data['xcore_is_variation'] = true;
