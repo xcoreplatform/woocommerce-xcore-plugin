@@ -4,7 +4,7 @@ defined('ABSPATH') || exit;
 
 class Xcore
 {
-    private        $_version     = '1.8.1';
+    private        $_version     = '1.8.2';
     private static $_instance    = null;
     private        $_xcoreHelper = null;
 
