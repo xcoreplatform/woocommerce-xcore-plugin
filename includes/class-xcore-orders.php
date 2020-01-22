@@ -45,7 +45,7 @@ class Xcore_Orders extends WC_REST_Orders_Controller
             'methods'             => WP_REST_Server::EDITABLE,
             'callback'            => array($this, 'update_item'),
             'permission_callback' => array($this, 'update_item_permissions_check'),
-            'args'                => $this->get_collection_params(),
+            'args'                => $this->get_endpoint_args_for_item_schema( WP_REST_Server::EDITABLE ),
         ));
     }
 
