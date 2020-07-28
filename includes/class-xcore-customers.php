@@ -27,6 +27,13 @@ class Xcore_Customers extends WC_REST_Customers_Controller
             'args'                => $this->get_collection_params(),
         ));
 
+        register_rest_route($this->namespace, $this->base . '/meta', array(
+            'methods'             => WP_REST_Server::READABLE,
+            'callback'            => array($this, 'find_by_meta'),
+            'permission_callback' => array($this, 'get_items_permissions_check'),
+            'args'                => $this->get_collection_params(),
+        ));
+
         register_rest_route($this->namespace, $this->base, array(
             'methods'             => WP_REST_Server::CREATABLE,
             'callback'            => array($this, 'create_item'),
@@ -72,6 +79,72 @@ class Xcore_Customers extends WC_REST_Customers_Controller
         return $wp_roles->role_names;
     }
 
+    public function find_by_meta($request)
+    {
+        $meta_key       = $request['meta_key'];
+        $meta_value     = $request['meta_value'];
+        $must_be_unique = isset($request['unique']) ? $request['unique'] : true;
+
+        $args = array(
+            'order'      => 'ASC',
+            'orderby'    => 'display_name',
+            'meta_query' => array(
+                'relation' => 'OR',
+                array(
+                    'key'     => $meta_key,
+                    'value'   => $meta_value,
+                    'compare' => '='
+                )
+            )
+        );
+
+        $wp_user_query = new WP_User_Query($args);
+        $result = $wp_user_query->get_results();
+
+        if (is_wp_error($result)) {
+            return $result;
+        }
+
+        if(!$result) {
+            return new WP_Error('404', 'No user found', array('status' => '404'));
+        }
+
+        /**
+         * Limiting the results to 30 as this is currently intended to get a specific customer by searching for a custom value (for now).
+         */
+        if(count($result) > 30) {
+            return new WP_Error('400', 'Search too ambiguous, more than 30 users found.', array('status' => '400'));
+        }
+
+        if($must_be_unique && count($result) > 1) {
+            return new WP_Error('400', 'More than 1 user was found. Search critera must be unique.', array('status' => '400'));
+        } else if(!$must_be_unique && count($result) > 1) {
+            $users = [];
+
+            foreach($result as $key => $value) {
+                $user = new WC_Customer($value->ID);
+                $class = new stdClass();
+                $class->id = $user->get_id();
+                $class->date_created = $user->get_date_created();
+                $class->date_modified = $user->get_date_modified();
+                $users[] = $class;
+            }
+
+            return $users;
+        }
+
+        if(isset($result[0])) {
+            $user = new WC_Customer( $result[0]->ID);
+            $class = new stdClass();
+            $class->id = $user->get_id();
+            $class->date_created = $user->get_date_created();
+            $class->date_modified = $user->get_date_modified();
+
+            return $class;
+        }
+
+        return new WP_Error('404', 'No user found', array('status' => '404'));
+    }
 
     /**
      * @param WP_REST_Request $request
