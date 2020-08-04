@@ -8,4 +8,4 @@ License: The MIT License (MIT)
 This module extends the api of Woocommerce and is needed for the usage of the xCore. For more information or support see http://www.dealer4dealer.nl.
 
 == Installation ==
-The manual installation method involves downloading the plugin and uploading it to your webserver via your favourite FTP application. The WordPress codex contains [instructions on how to do this here](https://codex.wordpress.org/Managing_Plugins#Manual_Plugin_Installation).
+The manual installation method involves downloading the plugin and uploading it to your webserver via your favourite FTP application. The WordPress codex contains [instructions on how to do this here](https://wordpress.org/support/article/managing-plugins/#manual-plugin-installation).
