@@ -1,4 +1,5 @@
 <?php
+
 defined('ABSPATH') || exit;
 
 class Xcore_Customers extends WC_REST_Customers_Controller
@@ -20,57 +21,81 @@ class Xcore_Customers extends WC_REST_Customers_Controller
      */
     public function init()
     {
-        register_rest_route($this->namespace, $this->base, array(
-            'methods'             => WP_REST_Server::READABLE,
-            'callback'            => array($this, 'get_items'),
-            'permission_callback' => array($this, 'get_items_permissions_check'),
-            'args'                => $this->get_collection_params(),
-        ));
-
-        register_rest_route($this->namespace, $this->base . '/meta', array(
-            'methods'             => WP_REST_Server::READABLE,
-            'callback'            => array($this, 'find_by_meta'),
-            'permission_callback' => array($this, 'get_items_permissions_check'),
-            'args'                => $this->get_collection_params(),
-        ));
-
-        register_rest_route($this->namespace, $this->base, array(
-            'methods'             => WP_REST_Server::CREATABLE,
-            'callback'            => array($this, 'create_item'),
-            'permission_callback' => array($this, 'create_item_permissions_check'),
-            'args'                => $this->get_endpoint_args_for_item_schema(WP_REST_Server::CREATABLE),
-        ));
-
-        register_rest_route($this->namespace, $this->base . '/(?P<id>[\d]+)', array(
-            'methods'             => WP_REST_Server::EDITABLE,
-            'callback'            => array($this, 'update_item'),
-            'permission_callback' => array($this, 'update_item_permissions_check'),
-            'args'                => $this->get_endpoint_args_for_item_schema(WP_REST_Server::EDITABLE),
-        ));
-
-        register_rest_route($this->namespace, $this->base . '/roles', array(
-            'methods'             => WP_REST_Server::READABLE,
-            'callback'            => array($this, 'get_roles'),
-            'permission_callback' => array($this, 'get_items_permissions_check'),
-            'args'                => $this->get_collection_params(),
-        ));
-
-        register_rest_route($this->namespace, $this->base . '/(?P<id>[\d]+)', array(
-            'args' => array(
-                'id' => array(
-                    'description' => __('Unique identifier for the resource.', 'woocommerce'),
-                    'type'        => 'integer',
-                ),
-            ),
+        register_rest_route(
+            $this->namespace,
+            $this->base,
             array(
                 'methods'             => WP_REST_Server::READABLE,
-                'callback'            => array($this, 'get_item'),
-                'permission_callback' => array($this, 'get_item_permissions_check'),
-                'args'                => array(
-                    'context' => $this->get_context_param(array('default' => 'view')),
+                'callback'            => array($this, 'get_items'),
+                'permission_callback' => array($this, 'get_items_permissions_check'),
+                'args'                => $this->get_collection_params(),
+            )
+        );
+
+        register_rest_route(
+            $this->namespace,
+            $this->base . '/meta',
+            array(
+                'methods'             => WP_REST_Server::READABLE,
+                'callback'            => array($this, 'find_by_meta'),
+                'permission_callback' => array($this, 'get_items_permissions_check'),
+                'args'                => $this->get_collection_params(),
+            )
+        );
+
+        register_rest_route(
+            $this->namespace,
+            $this->base,
+            array(
+                'methods'             => WP_REST_Server::CREATABLE,
+                'callback'            => array($this, 'create_item'),
+                'permission_callback' => array($this, 'create_item_permissions_check'),
+                'args'                => $this->get_endpoint_args_for_item_schema(WP_REST_Server::CREATABLE),
+            )
+        );
+
+        register_rest_route(
+            $this->namespace,
+            $this->base . '/(?P<id>[\d]+)',
+            array(
+                'methods'             => WP_REST_Server::EDITABLE,
+                'callback'            => array($this, 'update_item'),
+                'permission_callback' => array($this, 'update_item_permissions_check'),
+                'args'                => $this->get_endpoint_args_for_item_schema(WP_REST_Server::EDITABLE),
+            )
+        );
+
+        register_rest_route(
+            $this->namespace,
+            $this->base . '/roles',
+            array(
+                'methods'             => WP_REST_Server::READABLE,
+                'callback'            => array($this, 'get_roles'),
+                'permission_callback' => array($this, 'get_items_permissions_check'),
+                'args'                => $this->get_collection_params(),
+            )
+        );
+
+        register_rest_route(
+            $this->namespace,
+            $this->base . '/(?P<id>[\d]+)',
+            array(
+                'args' => array(
+                    'id' => array(
+                        'description' => __('Unique identifier for the resource.', 'woocommerce'),
+                        'type'        => 'integer',
+                    ),
                 ),
-            ),
-        ));
+                array(
+                    'methods'             => WP_REST_Server::READABLE,
+                    'callback'            => array($this, 'get_item'),
+                    'permission_callback' => array($this, 'get_item_permissions_check'),
+                    'args'                => array(
+                        'context' => $this->get_context_param(array('default' => 'view')),
+                    ),
+                ),
+            )
+        );
     }
 
     public function get_roles($request)
@@ -99,45 +124,47 @@ class Xcore_Customers extends WC_REST_Customers_Controller
         );
 
         $wp_user_query = new WP_User_Query($args);
-        $result = $wp_user_query->get_results();
+        $result        = $wp_user_query->get_results();
 
         if (is_wp_error($result)) {
             return $result;
         }
 
-        if(!$result) {
+        if (!$result) {
             return new WP_Error('404', 'No user found', array('status' => '404'));
         }
 
         /**
          * Limiting the results to 30 as this is currently intended to get a specific customer by searching for a custom value (for now).
          */
-        if(count($result) > 30) {
+        if (count($result) > 30) {
             return new WP_Error('400', 'Search too ambiguous, more than 30 users found.', array('status' => '400'));
         }
 
-        if($must_be_unique && count($result) > 1) {
+        if ($must_be_unique && count($result) > 1) {
             return new WP_Error('400', 'More than 1 user was found. Search critera must be unique.', array('status' => '400'));
-        } else if(!$must_be_unique && count($result) > 1) {
-            $users = [];
+        } else {
+            if (!$must_be_unique && count($result) > 1) {
+                $users = [];
 
-            foreach($result as $key => $value) {
-                $user = new WC_Customer($value->ID);
-                $class = new stdClass();
-                $class->id = $user->get_id();
-                $class->date_created = $user->get_date_created();
-                $class->date_modified = $user->get_date_modified();
-                $users[] = $class;
+                foreach ($result as $key => $value) {
+                    $user                 = new WC_Customer($value->ID);
+                    $class                = new stdClass();
+                    $class->id            = $user->get_id();
+                    $class->date_created  = $user->get_date_created();
+                    $class->date_modified = $user->get_date_modified();
+                    $users[]              = $class;
+                }
+
+                return $users;
             }
-
-            return $users;
         }
 
-        if(isset($result[0])) {
-            $user = new WC_Customer( $result[0]->ID);
-            $class = new stdClass();
-            $class->id = $user->get_id();
-            $class->date_created = $user->get_date_created();
+        if (isset($result[0])) {
+            $user                 = new WC_Customer($result[0]->ID);
+            $class                = new stdClass();
+            $class->id            = $user->get_id();
+            $class->date_created  = $user->get_date_created();
             $class->date_modified = $user->get_date_modified();
 
             return $class;
@@ -162,12 +189,18 @@ class Xcore_Customers extends WC_REST_Customers_Controller
             return parent::get_items($request);
         }
 
-        $limit = (int)$request['limit'] ?: 50;
+        $limit                = 50;
+        $timezoneOffset       = wc_timezone_offset();
+        $filter_date_modified = '2001-01-01 00:00:00';
 
-        $timezoneOffset = wc_timezone_offset();
+        if (isset($request['limit']) && $request['limit']) {
+            $limit = (int)$request['limit'];
+        }
 
-        $value = $request['date_modified'] ?: 0;
-        $value = str_ireplace('T', ' ', $value);
+        if (isset($request['date_modified']) && $request['date_modified']) {
+            $filter_date_modified = $request['date_modified'];
+        }
+        $value = str_ireplace('T', ' ', $filter_date_modified);
 
         $wp_users_table = $wpdb->users;
         $wp_user_meta   = $wpdb->usermeta;
@@ -193,5 +226,4 @@ class Xcore_Customers extends WC_REST_Customers_Controller
 
         return $results;
     }
-
 }

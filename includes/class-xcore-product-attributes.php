@@ -25,21 +25,29 @@ class Xcore_Product_Attributes extends WC_REST_Product_Attributes_Controller
      */
     private function init()
     {
-        register_rest_route($this->namespace, $this->base, array(
-            'methods'             => WP_REST_Server::READABLE,
-            'callback'            => array($this, 'get_items'),
-            'permission_callback' => array($this, 'get_items_permissions_check'),
-            'args'                => $this->get_collection_params(),
-        ));
+        register_rest_route(
+            $this->namespace,
+            $this->base,
+            array(
+                'methods'             => WP_REST_Server::READABLE,
+                'callback'            => array($this, 'get_items'),
+                'permission_callback' => array($this, 'get_items_permissions_check'),
+                'args'                => $this->get_collection_params(),
+            )
+        );
 
-        register_rest_route($this->namespace, $this->base . '/(?P<id>[\d]+)', array(
-            'methods'             => WP_REST_Server::READABLE,
-            'callback'            => array($this, 'get_item'),
-            'permission_callback' => array($this, 'get_item_permissions_check'),
-            'args'                => array(
-                'context' => $this->get_context_param(array('default' => 'view')),
-            ),
-        ));
+        register_rest_route(
+            $this->namespace,
+            $this->base . '/(?P<id>[\d]+)',
+            array(
+                'methods'             => WP_REST_Server::READABLE,
+                'callback'            => array($this, 'get_item'),
+                'permission_callback' => array($this, 'get_item_permissions_check'),
+                'args'                => array(
+                    'context' => $this->get_context_param(array('default' => 'view')),
+                ),
+            )
+        );
     }
 
     /**
@@ -53,10 +61,10 @@ class Xcore_Product_Attributes extends WC_REST_Product_Attributes_Controller
     {
         $attributes = parent::get_items($request);
 
-        if($request['add_options'] == true) {
-            foreach($attributes->data as &$attribute) {
-                $taxonomy = wc_attribute_taxonomy_name_by_id($attribute['id']);
-                $options = get_terms($taxonomy);
+        if ($request['add_options'] == true) {
+            foreach ($attributes->data as &$attribute) {
+                $taxonomy             = wc_attribute_taxonomy_name_by_id($attribute['id']);
+                $options              = get_terms($taxonomy);
                 $attribute['options'] = $options;
             }
         }

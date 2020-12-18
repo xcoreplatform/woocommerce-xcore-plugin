@@ -1,4 +1,5 @@
 <?php
+
 defined('ABSPATH') || exit;
 
 class Xcore_Refunds extends WC_REST_Order_Refunds_Controller
@@ -7,7 +8,8 @@ class Xcore_Refunds extends WC_REST_Order_Refunds_Controller
     public           $version   = '1';
     public           $namespace = 'wc-xcore/v1';
     public           $base      = 'refunds';
-    private          $_xcoreHelper = null;
+    /** @var Xcore_Helper $_xcoreHelper */
+    private $_xcoreHelper;
 
     public function __construct($helper)
     {
@@ -21,26 +23,38 @@ class Xcore_Refunds extends WC_REST_Order_Refunds_Controller
      */
     public function init()
     {
-        register_rest_route($this->namespace, $this->base, array(
-            'methods'             => WP_REST_Server::READABLE,
-            'callback'            => array($this, 'get_items'),
-            'permission_callback' => array($this, 'get_items_permissions_check'),
-            'args'                => $this->get_collection_params(),
-        ));
+        register_rest_route(
+            $this->namespace,
+            $this->base,
+            array(
+                'methods'             => WP_REST_Server::READABLE,
+                'callback'            => array($this, 'get_items'),
+                'permission_callback' => array($this, 'get_items_permissions_check'),
+                'args'                => $this->get_collection_params(),
+            )
+        );
 
-        register_rest_route($this->namespace, 'orders' . '/(?P<order_id>[\d]+)' . '/' . $this->base . '/(?P<id>[\d]+)', array(
-            'methods'             => WP_REST_Server::READABLE,
-            'callback'            => array($this, 'get_item'),
-            'permission_callback' => array($this, 'get_item_permissions_check'),
-            'args'                => $this->get_collection_params(),
-        ));
+        register_rest_route(
+            $this->namespace,
+            'orders' . '/(?P<order_id>[\d]+)' . '/' . $this->base . '/(?P<id>[\d]+)',
+            array(
+                'methods'             => WP_REST_Server::READABLE,
+                'callback'            => array($this, 'get_item'),
+                'permission_callback' => array($this, 'get_item_permissions_check'),
+                'args'                => $this->get_collection_params(),
+            )
+        );
 
-        register_rest_route($this->namespace, 'orders' . '/(?P<order_id>[\d]+)' . '/' . $this->base, array(
-            'methods'             => WP_REST_Server::READABLE,
-            'callback'            => array($this, 'get_items'),
-            'permission_callback' => array($this, 'get_items_permissions_check'),
-            'args'                => $this->get_collection_params(),
-        ));
+        register_rest_route(
+            $this->namespace,
+            'orders' . '/(?P<order_id>[\d]+)' . '/' . $this->base,
+            array(
+                'methods'             => WP_REST_Server::READABLE,
+                'callback'            => array($this, 'get_items'),
+                'permission_callback' => array($this, 'get_items_permissions_check'),
+                'args'                => $this->get_collection_params(),
+            )
+        );
     }
 
     /**
@@ -54,23 +68,33 @@ class Xcore_Refunds extends WC_REST_Order_Refunds_Controller
             return parent::get_items($request);
         }
 
-        $limit = (int)$request['limit'] ?: 50;
-        $date  = $request['date_modified'] ?: '2001-01-01 00:00:00';
+        $limit = 50;
+        $date  = '2001-01-01 00:00:00';
 
-        $orders = new WP_Query(array(
-                                   'numberposts'    => -1,
-                                   'post_type'      => 'shop_order_refund',
-                                   'post_status'    => array_keys(wc_get_order_statuses()),
-                                   'posts_per_page' => $limit,
-                                   'orderby'        => 'post_modified',
-                                   'order'          => 'ASC',
-                                   'date_query'     => array(
-                                       array(
-                                           'column' => 'post_modified_gmt',
-                                           'after'  => $date
-                                       )
-                                   )
-                               ));
+        if (isset($request['limit']) && $request['limit']) {
+            $limit = (int)$request['limit'];
+        }
+
+        if (isset($request['date_modified']) && $request['date_modified']) {
+            $date = $request['date_modified'];
+        }
+
+        $orders = new WP_Query(
+            array(
+                'numberposts'    => -1,
+                'post_type'      => 'shop_order_refund',
+                'post_status'    => array_keys(wc_get_order_statuses()),
+                'posts_per_page' => $limit,
+                'orderby'        => 'post_modified',
+                'order'          => 'ASC',
+                'date_query'     => array(
+                    array(
+                        'column' => 'post_modified_gmt',
+                        'after'  => $date
+                    )
+                )
+            )
+        );
 
         $result = [];
 
@@ -96,16 +120,16 @@ class Xcore_Refunds extends WC_REST_Order_Refunds_Controller
 
         $request['id'] = $request['order_id'];
         $orderInstance = new Xcore_Orders($this->_xcoreHelper);
-        $order = $orderInstance->get_item($request);
-        $orderData = $order->get_data();
+        $order         = $orderInstance->get_item($request);
+        $orderData     = $order->get_data();
 
-        $response      = $this->prepare_object_for_response($refund_object, $request);
+        $response                         = $this->prepare_object_for_response($refund_object, $request);
         $response->data['parent_id']      = $orderData['id'];
         $response->data['original_order'] = $orderData;
 
         $types = ['line_items', 'shipping_lines', 'fee_lines'];
 
-        foreach($types as $type) {
+        foreach ($types as $type) {
             $this->_xcoreHelper->add_tax_rate($response->data, $type);
         }
 
@@ -113,7 +137,7 @@ class Xcore_Refunds extends WC_REST_Order_Refunds_Controller
     }
 
     /**
-     * @param WC_Data $object
+     * @param WC_Data         $object
      * @param WP_REST_Request $request
      * @return mixed|void|WP_Error|WP_REST_Response
      */
@@ -148,8 +172,8 @@ class Xcore_Refunds extends WC_REST_Order_Refunds_Controller
          * refers to object type being prepared for the response.
          *
          * @param WP_REST_Response $response The response object.
-         * @param WC_Data $object            Object data.
-         * @param WP_REST_Request $request   Request object.
+         * @param WC_Data          $object   Object data.
+         * @param WP_REST_Request  $request  Request object.
          */
         return apply_filters("woocommerce_rest_prepare_{$this->post_type}_object", $response, $object, $request);
     }
