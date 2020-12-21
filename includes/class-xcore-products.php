@@ -298,6 +298,30 @@ class Xcore_Products extends WC_REST_Products_Controller
      * @param $request
      * @return WP_Error|WP_REST_Response
      */
+    public function search_item($request)
+    {
+        $sku = $request->has_param('sku') ? $request->get_param('sku') : null;
+
+        $product_id = wc_get_product_id_by_sku($sku);
+        $object     = parent::get_object($product_id);
+
+        if ($object) {
+            $result = parent::prepare_object_for_response($object, $request);
+
+            if ($object instanceof WC_Product_Variation) {
+                $result->data['xcore_is_variation'] = true;
+            } else {
+                $result->data['xcore_is_variation'] = false;
+            }
+            return $result;
+        }
+        return new WP_Error('404', 'No item found with SKU: ' . $sku, array('status' => '404'));
+    }
+
+    /**
+     * @param $request
+     * @return WP_Error|WP_REST_Response
+     */
     public function find_item_by_sku($request)
     {
         $product_reference = urldecode($request['id']);
