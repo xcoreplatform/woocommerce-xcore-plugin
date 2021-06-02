@@ -25,131 +25,136 @@ class Xcore_Products extends WC_REST_Products_Controller
         register_rest_route(
             $this->namespace,
             $this->base,
-            array(
+            [
                 'methods'             => WP_REST_Server::READABLE,
-                'callback'            => array($this, 'get_items'),
-                'permission_callback' => array($this, 'get_items_permissions_check'),
+                'callback'            => [$this, 'get_items'],
+                'permission_callback' => [$this, 'get_items_permissions_check'],
                 'args'                => $this->get_collection_params(),
-            )
+            ]
         );
 
         register_rest_route(
             $this->namespace,
             $this->base,
-            array(
+            [
                 'methods'             => WP_REST_Server::CREATABLE,
-                'callback'            => array($this, 'create_item'),
-                'permission_callback' => array($this, 'create_item_permissions_check'),
+                'callback'            => [$this, 'create_item'],
+                'permission_callback' => [$this, 'create_item_permissions_check'],
                 'args'                => $this->get_endpoint_args_for_item_schema(WP_REST_Server::CREATABLE),
-            )
+            ]
         );
 
         register_rest_route(
             $this->namespace,
             $this->base,
-            array(
+            [
                 'methods'             => WP_REST_Server::EDITABLE,
-                'callback'            => array($this, 'update_item'),
-                'permission_callback' => array($this, 'update_item_permissions_check'),
+                'callback'            => [$this, 'update_item'],
+                'permission_callback' => [$this, 'update_item_permissions_check'],
                 'args'                => $this->get_endpoint_args_for_item_schema(WP_REST_Server::EDITABLE),
-            )
+            ]
         );
 
         register_rest_route(
             $this->namespace,
             $this->base . '/batch',
-            array(
+            [
                 'methods'             => WP_REST_Server::EDITABLE,
-                'callback'            => array($this, 'batch_items'),
-                'permission_callback' => array($this, 'batch_items_permissions_check'),
+                'callback'            => [$this, 'batch_items'],
+                'permission_callback' => [$this, 'batch_items_permissions_check'],
                 'args'                => $this->get_endpoint_args_for_item_schema(WP_REST_Server::EDITABLE),
-            )
+            ]
         );
 
         register_rest_route(
             $this->namespace,
             $this->base . '/(?P<id>[\d]+)',
-            array(
+            [
                 'methods'             => WP_REST_Server::READABLE,
-                'callback'            => array($this, 'get_item'),
-                'permission_callback' => array($this, 'get_item_permissions_check'),
+                'callback'            => [$this, 'get_item'],
+                'permission_callback' => [$this, 'get_item_permissions_check'],
                 'args'                => $this->get_collection_params(),
-            )
+            ]
         );
 
         register_rest_route(
             $this->namespace,
             $this->base . '/allby/sku/(?P<sku>[\S]+)',
-            array(
+            [
                 'methods'             => WP_REST_Server::READABLE,
-                'callback'            => array($this, 'get_all_items'),
-                'permission_callback' => array($this, 'get_item_permissions_check'),
+                'callback'            => [$this, 'get_all_items'],
+                'permission_callback' => [$this, 'get_item_permissions_check'],
                 'args'                => $this->get_collection_params(),
-            )
+            ]
         );
 
         register_rest_route(
             $this->namespace,
             $this->base . '/search',
-            array(
+            [
                 'methods'             => WP_REST_Server::READABLE,
-                'callback'            => array($this, 'search_item'),
-                'permission_callback' => array($this, 'get_item_permissions_check'),
+                'callback'            => [$this, 'search_item'],
+                'permission_callback' => [$this, 'get_item_permissions_check'],
                 'args'                => $this->get_collection_params(),
-            )
+            ]
         );
 
         register_rest_route(
             $this->namespace,
             $this->base . '/findby/sku/(?P<id>[\S]+)',
-            array(
+            [
                 'methods'             => WP_REST_Server::READABLE,
-                'callback'            => array($this, 'find_item_by_sku'),
-                'permission_callback' => array($this, 'get_item_permissions_check'),
+                'callback'            => [$this, 'find_item_by_sku'],
+                'permission_callback' => [$this, 'get_item_permissions_check'],
                 'args'                => $this->get_collection_params(),
-            )
+            ]
         );
 
         register_rest_route(
             $this->namespace,
             $this->base . '/(?P<id>[\d]+)',
-            array(
+            [
                 'methods'             => WP_REST_Server::EDITABLE,
-                'callback'            => array($this, 'update_item'),
-                'permission_callback' => array($this, 'update_item_permissions_check'),
+                'callback'            => [$this, 'update_item'],
+                'permission_callback' => [$this, 'update_item_permissions_check'],
                 'args'                => $this->get_endpoint_args_for_item_schema(WP_REST_Server::EDITABLE),
-            )
+            ]
         );
 
         register_rest_route(
             $this->namespace,
             'products/types',
-            array(
+            [
                 'methods'             => WP_REST_Server::READABLE,
-                'callback'            => array($this, 'get_product_types'),
+                'callback'            => [$this, 'get_product_types'],
                 'permission_callback' => '__return_true',
-            )
+            ]
         );
 
         register_rest_route(
             $this->namespace,
             'products/categories',
-            array(
+            [
                 'methods'             => WP_REST_Server::READABLE,
-                'callback'            => array($this, 'get_product_categories'),
+                'callback'            => [$this, 'get_product_categories'],
                 'permission_callback' => '__return_true',
-            )
+            ]
         );
 
         register_rest_route(
             $this->namespace,
             'products/categories' . '/(?P<id>[\d]+)',
-            array(
+            [
                 'methods'             => WP_REST_Server::READABLE,
-                'callback'            => array($this, 'get_product_category'),
+                'callback'            => [$this, 'get_product_category'],
                 'permission_callback' => '__return_true',
-            )
+            ]
         );
+    }
+
+    public function batch_items($request)
+    {
+        return parent::batch_items($request);
     }
 
     public function create_item($request)
@@ -163,10 +168,12 @@ class Xcore_Products extends WC_REST_Products_Controller
     }
 
     /**
-     * Sadly there's no way of obtaining a list with all available product types, including (custom) variations. This allows
-     * us to bypass the problem if a customer wants to process (custom) variations as well, without impacting performance.
+     * Sadly there's no way of obtaining a list with all available product types, including (custom) variations.
+     * This allows us to bypass the problem if a customer wants to process (custom) variations as well, without
+     * impacting performance.
      *
      * @param WP_REST_Request $request
+     *
      * @return WP_Error|WP_REST_Response
      */
 
@@ -181,7 +188,6 @@ class Xcore_Products extends WC_REST_Products_Controller
          * I attempted to use the Xcore_Product_Variations::get_items() when dealing with variations, but I noticed
          * (which I should have known had I read the API documention concerning available variation properties) some
          * key attributes are missing when using it (such as type).
-         *
          * To avoid missing out on data (added by woocommerce or by any other plug-in) and lose the ability to process
          * specific custom product types, we should leave it as is.
          */
@@ -201,6 +207,7 @@ class Xcore_Products extends WC_REST_Products_Controller
      * Returns an array with item information
      *
      * @param WP_REST_Request $request Full data about the request.
+     *
      * @return array
      */
     public function get_items($request)
@@ -218,19 +225,20 @@ class Xcore_Products extends WC_REST_Products_Controller
         }
 
         $products = new WP_Query(
-            array(
+            [
                 'numberposts'    => -1,
                 'post_type'      => $product_only ? ['product'] : ['product', 'product_variation'],
                 'posts_per_page' => $limit,
                 'orderby'        => 'post_modified',
                 'order'          => 'ASC',
-                'date_query'     => array(
-                    array(
-                        'column' => 'post_modified_gmt',
-                        'after'  => $date
-                    )
-                )
-            )
+                'date_query'     => [
+                    [
+                        'column'    => 'post_modified_gmt',
+                        'after'     => $date,
+                        'inclusive' => true,
+                    ],
+                ],
+            ]
         );
 
         $result = [];
@@ -252,7 +260,7 @@ class Xcore_Products extends WC_REST_Products_Controller
     public function get_all_items($request)
     {
         if (!isset($request['sku'])) {
-            return new WP_Error('404', 'No SKU set', array('status' => '404'));
+            return new WP_Error('404', 'No SKU set', ['status' => '404']);
         }
 
         return parent::get_items($request);
@@ -260,6 +268,7 @@ class Xcore_Products extends WC_REST_Products_Controller
 
     /**
      * @param WP_REST_Request $request
+     *
      * @return WP_Error|WP_REST_Response
      */
     public function update_item($request)
@@ -267,7 +276,13 @@ class Xcore_Products extends WC_REST_Products_Controller
         $object = $this->get_object((int)$request['id']);
 
         if (!$object) {
-            return new WP_Error('404', 'No item found with ID: ' . $request['id'], array('status' => '404'));
+            return new WP_Error('404', 'No item found with ID: ' . $request['id'], ['status' => '404']);
+        }
+
+        $isVariation = $object->is_type('variation');
+
+        if (isset($request['stock_quantity'])) {
+            return $this->updateStock($request, $isVariation);
         }
 
         $file = $this->processMedia($request);
@@ -296,6 +311,7 @@ class Xcore_Products extends WC_REST_Products_Controller
 
     /**
      * @param $request
+     *
      * @return WP_Error|WP_REST_Response
      */
     public function search_item($request)
@@ -315,11 +331,12 @@ class Xcore_Products extends WC_REST_Products_Controller
             }
             return $result;
         }
-        return new WP_Error('404', 'No item found with SKU: ' . $sku, array('status' => '404'));
+        return new WP_Error('404', 'No item found with SKU: ' . $sku, ['status' => '404']);
     }
 
     /**
      * @param $request
+     *
      * @return WP_Error|WP_REST_Response
      */
     public function find_item_by_sku($request)
@@ -328,7 +345,7 @@ class Xcore_Products extends WC_REST_Products_Controller
         $product_id        = wc_get_product_id_by_sku($product_reference);
 
         if (!$product_id) {
-            return new WP_Error('404', 'No item found with SKU: ' . $product_reference, array('status' => '404'));
+            return new WP_Error('404', 'No item found with SKU: ' . $product_reference, ['status' => '404']);
         }
 
         $request['id'] = $product_id;
@@ -337,6 +354,7 @@ class Xcore_Products extends WC_REST_Products_Controller
 
     /**
      * @param WP_REST_Request $request
+     *
      * @return array
      */
     public function get_product_types($request)
@@ -346,6 +364,7 @@ class Xcore_Products extends WC_REST_Products_Controller
 
     /**
      * @param $request
+     *
      * @return mixed|void
      */
     public function get_product_categories($request)
@@ -354,12 +373,12 @@ class Xcore_Products extends WC_REST_Products_Controller
         $order      = 'asc';
         $hide_empty = false;
 
-        $cat_args = array(
+        $cat_args = [
             'orderby'    => $orderby,
             'order'      => $order,
             'hide_empty' => $hide_empty,
             'fields'     => 'ids',
-        );
+        ];
 
         $terms = get_terms('product_cat', $cat_args);
 
@@ -372,6 +391,7 @@ class Xcore_Products extends WC_REST_Products_Controller
     /**
      * @param      $request
      * @param null $id
+     *
      * @return array|WP_Error
      */
     public function get_product_category($request, $id = null)
@@ -401,7 +421,9 @@ class Xcore_Products extends WC_REST_Products_Controller
 
             if (is_wp_error($term) || is_null($term)) {
                 throw new WC_REST_Exception(
-                    'woocommerce_api_invalid_product_category_id', __('A product category with the provided ID could not be found', 'woocommerce'), 404
+                    'woocommerce_api_invalid_product_category_id',
+                    __('A product category with the provided ID could not be found', 'woocommerce'),
+                    404
                 );
             }
 
@@ -417,12 +439,17 @@ class Xcore_Products extends WC_REST_Products_Controller
 
             // Get category image
             $image    = '';
-            $image_id = function_exists('get_term_meta') ? get_term_meta($term_id, 'thumbnail_id', true) : get_metadata('woocommerce_term', $term_id, 'thumbnail_id', true);
+            $image_id = function_exists('get_term_meta') ? get_term_meta($term_id, 'thumbnail_id', true) : get_metadata(
+                'woocommerce_term',
+                $term_id,
+                'thumbnail_id',
+                true
+            );
             if ($image_id) {
                 $image = wp_get_attachment_url($image_id);
             }
 
-            $product_category = array(
+            $product_category = [
                 'id'          => $term_id,
                 'name'        => $term->name,
                 'slug'        => $term->slug,
@@ -431,28 +458,12 @@ class Xcore_Products extends WC_REST_Products_Controller
                 'display'     => $display_type ? $display_type : 'default',
                 'image'       => $image ? esc_url($image) : '',
                 'count'       => intval($term->count),
-            );
+            ];
 
-            return array('product_category' => apply_filters('woocommerce_api_product_category_response', $product_category, $id, null, $term, $this));
+            return ['product_category' => apply_filters('woocommerce_api_product_category_response', $product_category, $id, null, $term, $this)];
         } catch (WC_API_Exception $e) {
-            return new WP_Error($e->getErrorCode(), $e->getMessage(), array('status' => $e->getCode()));
+            return new WP_Error($e->getErrorCode(), $e->getMessage(), ['status' => $e->getCode()]);
         }
-    }
-
-    private function processMedia($request)
-    {
-        if (!isset($request['xcore_media'])) {
-            return false;
-        }
-
-        $dirs = wp_get_upload_dir();
-        $file = $this->upload_item_media($request['xcore_media'], $dirs['basedir']);
-
-        if ($file) {
-            return $dirs['baseurl'] . "/" . $file;
-        }
-
-        return false;
     }
 
     public function upload_item_media($media, $uploadBasedir)
@@ -475,6 +486,45 @@ class Xcore_Products extends WC_REST_Products_Controller
                 break;
         }
         return false;
+    }
+
+    public function filter_stock_updates($data, $postarr, $unsanitized_postarr)
+    {
+        if (isset($postarr['post_modified_gmt'])) {
+            $data['post_modified_gmt'] = $postarr['post_modified_gmt'];
+        }
+        return $data;
+    }
+
+    private function processMedia($request)
+    {
+        if (!isset($request['xcore_media'])) {
+            return false;
+        }
+
+        $dirs = wp_get_upload_dir();
+        $file = $this->upload_item_media($request['xcore_media'], $dirs['basedir']);
+
+        if ($file) {
+            return $dirs['baseurl'] . "/" . $file;
+        }
+
+        return false;
+    }
+
+    private function updateStock($request, $isVariation)
+    {
+        add_filter('wp_insert_post_data', [__CLASS__, 'filter_stock_updates'], 10, 3);
+
+        $product = $isVariation ? new WC_Product_Variation($request['id']) : new WC_Product($request['id']);
+        $date    = $product->get_date_modified();
+
+        $product->set_stock_quantity($request['stock_quantity']);
+        $product->set_date_modified((string)$date);
+        $product->save();
+        remove_filter('wp_insert_post_data', [__CLASS__, 'filter_stock_updates']);
+
+        return new WP_REST_Response($request['stock_quantity'], 200);
     }
 
     private function attachFile($file, $request)

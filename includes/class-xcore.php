@@ -4,7 +4,7 @@ defined('ABSPATH') || exit;
 
 class Xcore
 {
-    private        $_version     = '1.9.1';
+    private        $_version     = '1.10.0';
     private static $_instance    = null;
     private        $_xcoreHelper = null;
 
@@ -30,7 +30,11 @@ class Xcore
     {
         add_filter(
             'woocommerce_before_product_object_save',
-            function ($product) {
+            function($product, $dataStore) {
+                if (has_filter('wp_insert_post_data', [Xcore_Products::class, 'filter_stock_updates'])) {
+                    return $product;
+                }
+
                 if ($product->get_type() == 'variation') {
                     $date = new WC_DateTime(current_time('mysql'));
                     $product->set_date_modified($date);
@@ -38,30 +42,30 @@ class Xcore
                 return $product;
             },
             10,
-            1
+            2
         );
 
         add_action(
             'rest_api_init',
-            function () {
+            function() {
                 register_rest_route(
                     'wc-xcore/v1',
                     'version',
-                    array(
+                    [
                         'methods'             => WP_REST_Server::READABLE,
-                        'callback'            => array($this, 'xcore_api_version'),
+                        'callback'            => [$this, 'xcore_api_version'],
                         'permission_callback' => '__return_true',
-                    )
+                    ]
                 );
 
                 register_rest_route(
                     'wc-xcore/v1',
                     'info',
-                    array(
+                    [
                         'methods'             => WP_REST_Server::READABLE,
-                        'callback'            => array($this, 'get_website_info'),
-                        'permission_callback' => array($this, 'get_items_permissions_check'),
-                    )
+                        'callback'            => [$this, 'get_website_info'],
+                        'permission_callback' => [$this, 'get_items_permissions_check'],
+                    ]
                 );
 
                 $this->includes();
@@ -72,6 +76,7 @@ class Xcore
 
     /**
      * @param WP_REST_Request $request
+     *
      * @return string
      */
 
@@ -101,6 +106,7 @@ class Xcore
         include_once dirname(__FILE__) . '/class-xcore-shipping-methods.php';
         include_once dirname(__FILE__) . '/class-xcore-payment-methods.php';
         include_once dirname(__FILE__) . '/class-xcore-tax-classes.php';
+        include_once dirname(__FILE__) . '/class-xcore-documents.php';
     }
 
     /**
@@ -108,7 +114,7 @@ class Xcore
      */
     public function init_classes()
     {
-        $classes = array(
+        $classes = [
             'Xcore_Products',
             'Xcore_Product_Variations',
             'Xcore_Product_Attributes',
@@ -118,8 +124,9 @@ class Xcore
             'Xcore_Refunds',
             'Xcore_Shipping_Methods',
             'Xcore_Payment_Methods',
-            'Xcore_Tax_Classes'
-        );
+            'Xcore_Tax_Classes',
+            'Xcore_Documents',
+        ];
 
         foreach ($classes as $class) {
             $this->$class = new $class($this->_xcoreHelper);
@@ -132,10 +139,18 @@ class Xcore
             return new WP_Error(
                 'woocommerce_rest_cannot_view',
                 __('Sorry, you cannot list resources.', 'woocommerce'),
-                array('status' => rest_authorization_required_code())
+                ['status' => rest_authorization_required_code()]
             );
         }
 
         return true;
+    }
+
+    /**
+     * @return Xcore_Helper
+     */
+    public function getHelper()
+    {
+        return $this->_xcoreHelper;
     }
 }

@@ -9,16 +9,28 @@ class Xcore_Helper extends Xcore_Data_Helper
      * use is to provide us with extra insight if something goes wrong.
      */
     private $check_plugins = [
-        'WooCommerce product bundles'          => 'woocommerce-product-bundles.php',
-        'WooCommerce Multilingual (WPML)'      => 'woocommerce-multilingual/wpml-woocommerce.php',
-        'WPML Media'                           => 'wpml-media-translation/plugin.php',
-        'WooCommerce Multistore'               => 'woocommerce-multistore.php',
-        'WooCommerce Wholesale Prices'         => 'woocommerce-wholesale-prices/woocommerce-wholesale-prices.bootstrap.php',
-        'WooCommerce Wholesale Prices Premium' => 'woocommerce-wholesale-prices-premium/woocommerce-wholesale-prices-premium.bootstrap.php',
-        'Woocommerce Wholesale Pro'            => 'woocommerce-wholesale-pro/woocommerce-wholesale-pro.php',
-        'Dynamic Pricing'                      => 'woocommerce-dynamic-pricing/woocommerce-dynamic-pricing.php',
-        'iThemes Security'                     => 'better-wp-security/better-wp-security.php',
-        'Custom order numbers for woocommerce' => 'custom-order-numbers-for-woocommerce.php',
+        'pricelist'    => [
+            'WooCommerce Wholesale Prices'         => 'woocommerce-wholesale-prices/woocommerce-wholesale-prices.bootstrap.php',
+            'WooCommerce Wholesale Prices Premium' => 'woocommerce-wholesale-prices-premium/woocommerce-wholesale-prices-premium.bootstrap.php',
+            'Woocommerce Wholesale Pro'            => 'woocommerce-wholesale-pro/woocommerce-wholesale-pro.php',
+            'Dynamic Pricing'                      => 'woocommerce-dynamic-pricing/woocommerce-dynamic-pricing.php',
+        ],
+        'productTypes' => [
+            'WooCommerce product bundles' => 'woocommerce-product-bundles.php',
+        ],
+        'translation'  => [
+            'WooCommerce Multilingual (WPML)' => 'woocommerce-multilingual/wpml-woocommerce.php',
+            'WPML Media'                      => 'wpml-media-translation/plugin.php',
+        ],
+        'multiStore'   => [
+            'WooCommerce Multistore' => 'woocommerce-multistore.php',
+        ],
+        'security'     => [
+            'iThemes Security' => 'better-wp-security/better-wp-security.php',
+        ],
+        'misc'         => [
+            'Custom order numbers for woocommerce' => 'custom-order-numbers-for-woocommerce.php',
+        ],
     ];
 
     /**
@@ -53,6 +65,7 @@ class Xcore_Helper extends Xcore_Data_Helper
 
     /**
      * @param bool $add_plugin_data
+     *
      * @return stdClass
      */
     public function get_info($add_plugin_data = false)
@@ -63,7 +76,7 @@ class Xcore_Helper extends Xcore_Data_Helper
 
         $info->misc = [
             'current_time'     => current_time('mysql', false),
-            'current_time_gmt' => current_time('mysql', true)
+            'current_time_gmt' => current_time('mysql', true),
         ];
 
         return $info;
@@ -80,19 +93,19 @@ class Xcore_Helper extends Xcore_Data_Helper
                 "plugin_version"      => Xcore::get_instance()->xcore_api_version(null),
                 "woocommerce_version" => WC()->version,
                 "multisite"           => is_multisite(),
-                "rest_url"            => get_rest_url(),
+                //"rest_url"            => get_rest_url(),
                 "theme"               => get_stylesheet(),
                 "permalink_structure" => get_option('permalink_structure'),
             ];
 
             $info['dir'] = [
-                "upload_dir"  => wp_get_upload_dir(),
+                //"upload_dir"  => wp_get_upload_dir(),
                 "wp_temp_dir" => get_temp_dir(),
             ];
 
             $info['timezone'] = [
-                'wp_timezone_string'          => wp_timezone_string(),
-                'wp_timezone'                 => wp_timezone(),
+                //'wp_timezone_string'          => wp_timezone_string(),
+                //'wp_timezone'                 => wp_timezone(),
                 'wp_timezone_override_offset' => wp_timezone_override_offset(),
                 'wc_timezone_offset'          => wc_timezone_offset(),
             ];
@@ -118,19 +131,31 @@ class Xcore_Helper extends Xcore_Data_Helper
     private function check_plugins()
     {
         $pluginData    = [];
-        $plugins       = get_plugins();
-        $activePlugins = (array)get_option('active_plugins', array());
 
-        foreach ($this->check_plugins as $name => $path) {
-            if (!$pluginData[$name]['installed'] = array_key_exists($path, $plugins)) {
-                continue;
-            }
-
-            $pluginData[$name]['active']  = in_array($path, $activePlugins);
-            $pluginData[$name]['version'] = $plugins[$path]['Version'];
+        foreach ($this->check_plugins as $category => $plugins) {
+            $pluginData[$category] = $this->getPluginData($plugins);
         }
 
         return $pluginData;
+    }
+
+    private function getPluginData($plugins)
+    {
+        $data = [];
+        foreach ($plugins as $name => $path) {
+            $isActive = is_plugin_active($path);
+
+            $x['name'] = $name;
+            $x['code'] = dirname($path);
+            $x['active']  = $isActive;
+            $x['version']  = 'unavailable';
+            if($isActive) {
+                $pluginData = get_plugin_data(WP_PLUGIN_DIR . '/' . $path, false, false);
+                $x['version']  = $pluginData['Version'];
+            }
+            $data[] = $x;
+        }
+        return $data;
     }
 
     private function get_base_data()
