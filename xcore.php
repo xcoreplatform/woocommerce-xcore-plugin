@@ -5,7 +5,7 @@ include_once(ABSPATH . 'wp-admin/includes/plugin.php');
    Plugin Name: xCore Rest API extension
    Plugin URI: http://xcore.dealer4dealer.nl
    description: Extend WC Rest API to support xCore requests
-   @Version: 1.10.0
+   @Version: 1.10.1
    @Author: Dealer4Dealer
    Author URI: http://www.dealer4dealer.nl
    Requires at least: 4.7.5
