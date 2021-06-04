@@ -282,7 +282,7 @@ class Xcore_Products extends WC_REST_Products_Controller
         $isVariation = $object->is_type('variation');
 
         if (isset($request['stock_quantity'])) {
-            return $this->updateStock($request, $isVariation);
+            return $this->updateStock($request, $object);
         }
 
         $file = $this->processMedia($request);
@@ -512,11 +512,9 @@ class Xcore_Products extends WC_REST_Products_Controller
         return false;
     }
 
-    private function updateStock($request, $isVariation)
+    private function updateStock($request, $product)
     {
         add_filter('wp_insert_post_data', [__CLASS__, 'filter_stock_updates'], 10, 3);
-
-        $product = $isVariation ? new WC_Product_Variation($request['id']) : new WC_Product($request['id']);
         $date    = $product->get_date_modified();
 
         $product->set_stock_quantity($request['stock_quantity']);
