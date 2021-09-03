@@ -279,8 +279,6 @@ class Xcore_Products extends WC_REST_Products_Controller
             return new WP_Error('404', 'No item found with ID: ' . $request['id'], ['status' => '404']);
         }
 
-        $isVariation = $object->is_type('variation');
-
         if (isset($request['stock_quantity'])) {
             return $this->updateStock($request, $object);
         }
@@ -514,13 +512,13 @@ class Xcore_Products extends WC_REST_Products_Controller
 
     private function updateStock($request, $product)
     {
-        add_filter('wp_insert_post_data', [__CLASS__, 'filter_stock_updates'], 10, 3);
+        add_filter('wp_insert_post_data', [$this, 'filter_stock_updates'], 10, 3);
         $date    = $product->get_date_modified();
 
         $product->set_stock_quantity($request['stock_quantity']);
         $product->set_date_modified((string)$date);
         $product->save();
-        remove_filter('wp_insert_post_data', [__CLASS__, 'filter_stock_updates']);
+        remove_filter('wp_insert_post_data', [$this, 'filter_stock_updates']);
 
         return new WP_REST_Response($request['stock_quantity'], 200);
     }
