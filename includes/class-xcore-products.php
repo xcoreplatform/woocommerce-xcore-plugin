@@ -161,7 +161,7 @@ class Xcore_Products extends WC_REST_Products_Controller
     {
         $file = $this->processMedia($request);
         if ($file) {
-            $request = $this->attachFile($file, $request);
+            $request = $this->attachFile($request, $file);
         }
 
         return parent::create_item($request);
@@ -285,7 +285,7 @@ class Xcore_Products extends WC_REST_Products_Controller
 
         $file = $this->processMedia($request);
         if ($file) {
-            $request = $this->attachFile($file, $request);
+            $request = $this->attachFile($request, $file, $object);
         }
 
         if ($object->is_type('variation')) {
@@ -523,15 +523,14 @@ class Xcore_Products extends WC_REST_Products_Controller
         return new WP_REST_Response($request['stock_quantity'], 200);
     }
 
-    private function attachFile($file, $request)
+    private function attachFile($request, $files, $product = null)
     {
-        $images = [];
-        if ($file) {
-            $images[]['src']   = $file;
-            $request['images'] = $images;
-        }
+        $images    = $product ? $this->get_images( $product ) : [];
+		$images[0] = [ "src" => $file ];
 
-        return $request;
+		$request->set_param( 'images', $images );
+
+		return $request;
     }
 
     private function cleanUp($file)
