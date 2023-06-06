@@ -10,13 +10,15 @@ class Xcore_Documents
     public           $base            = 'documents';
     private          $_xcoreHelper    = null;
     protected        $data            = [
-        'document_id'          => '',
-        'document_type'        => '',
-        'document_description' => '',
-        'date_created'         => '',
-        'order_id'             => null,
-        'customer_id'          => null,
-        'files'                => [],
+        'document_id'            => '',
+        'document_type'          => '',
+        'document_description'   => '',
+        'date_created'           => '',
+        'order_id'               => null,
+        'customer_id'            => null,
+        'custom_upload_base_dir' => null,
+        'custom_upload_sub_dir'  => null,
+        'files'                  => [],
     ];
     private          $processed_files = [];
     private          $user_id_valid   = false;
@@ -41,7 +43,7 @@ class Xcore_Documents
     {
         register_rest_route(
             $this->namespace,
-            $this->base,
+            $this->base . '/(?P<order_id>[\d]+)',
             [
                 'methods'             => WP_REST_Server::READABLE,
                 'callback'            => [$this, 'get_item'],
@@ -72,10 +74,29 @@ class Xcore_Documents
 
     public function get_item($request)
     {
-        return new WP_Error('501', 'GET not yet implemented', ['status' => '501']);
+        $document = apply_filters('xcore_rest_document_download', $request);
+
+        if (is_null($document)) {
+            $orderId = $request->get_param('order_id');
+            return new WP_Error(
+                'xcore_documents_unable_download',
+                sprintf('Unable to download document for order %s', $orderId),
+                ['status' => '400']
+            );
+        }
+
+        $data['data']                      = $document['data'];
+        $data['file_name']                 = $document['file_name'];
+        $data['file_extension']            = $document['file_type'];
+        $data['media_data_base64_encoded'] = base64_encode($document['file']);
+
+        $response = new WP_REST_Response();
+        $response->set_data($data);
+
+        return rest_ensure_response($response);
     }
 
-    public function create_item($request)
+    public function create_item(WP_REST_Request $request)
     {
         $response = $this->set_data($request);
 
@@ -83,7 +104,7 @@ class Xcore_Documents
             return $response;
         }
 
-        if ($file_count = count($this->data['files']) > 1) {
+        if ($file_count = (count($this->data['files']) > 1)) {
             return new WP_Error(
                 'xcore_documents_unsupported_file_count',
                 sprintf('Unable to process request, unsupported file count (%s)', $file_count),
@@ -92,7 +113,6 @@ class Xcore_Documents
         }
 
         $this->user_id_valid  = $this->is_user_valid($this->data['customer_id']);
-        $this->order_id_valid = $this->is_order_valid($this->data['order_id']);
 
         $file_process_result = $this->process_files();
         if (is_wp_error($file_process_result)) {
@@ -137,6 +157,13 @@ class Xcore_Documents
                     ['status' => '404']
                 );
             }
+
+			if ($key === 'order_id' && $value) {
+				$searchResult = wc_order_search( $value );
+				if ($searchResult) {
+					$value = reset($searchResult);
+				}
+			}
             $this->data[$key] = $value;
         }
         return true;
@@ -177,12 +204,38 @@ class Xcore_Documents
         $filenameSanitized = sanitize_file_name($filename);
         $date              = date("Y/m", strtotime($this->data['date_created']));
 
+        add_filter('upload_dir', [$this, 'setCustomUploadPath']);
         $fileUpload                         = wp_upload_bits($filenameSanitized, null, $documentData, $date);
         $fileUpload['document_id']          = $this->data['document_id'];
         $fileUpload['document_description'] = $this->data['document_description'];
         $fileUpload['original_filename']    = $file['original_filename'];
+        remove_filter('upload_dir', [$this, 'setCustomUploadPath']);
 
         return $fileUpload;
+    }
+
+    public function setCustomUploadPath($dirs)
+    {
+        if (!$this->data['custom_upload_base_dir'] && !$this->data['custom_upload_sub_dir']) {
+            return $dirs;
+        }
+
+        $newBaseDir = $this->data['custom_upload_base_dir'];
+        $newSubDir  = $this->data['custom_upload_sub_dir'];
+
+        if ($newBaseDir) {
+            $trimmedBaseDir  = trim($newBaseDir, '/');
+            $dirs['basedir'] = sprintf('%s/%s', dirname($dirs['basedir']), $trimmedBaseDir);
+            $dirs['baseurl'] = sprintf('%s/%s', dirname($dirs['baseurl']), $trimmedBaseDir);
+        }
+
+        if ($newSubDir) {
+            $trimmedSubDir = trim($newSubDir, '/');
+            $dirs['path']  = sprintf('%s/%s', $dirs['basedir'], $trimmedSubDir);
+            $dirs['url']   = sprintf('%s/%s', $dirs['baseurl'], $trimmedSubDir);
+        }
+
+        return $dirs;
     }
 
     private function attach_file($file)
@@ -195,7 +248,7 @@ class Xcore_Documents
             $this->attach($file, 'customer');
         }
 
-        if ($this->order_id_valid) {
+        if (is_numeric($this->data['order_id'])) {
             $this->attach($file, 'order');
         }
 
@@ -227,20 +280,6 @@ class Xcore_Documents
         }
 
         if ($wpdb->get_var($wpdb->prepare("SELECT EXISTS (SELECT 1 FROM $wpdb->users WHERE ID = %d)", $user_id))) {
-            return true;
-        }
-
-        return false;
-    }
-
-    private function is_order_valid($order_id)
-    {
-        global $wpdb;
-        if (!is_numeric($order_id)) {
-            return false;
-        }
-
-        if ($wpdb->get_var($wpdb->prepare("SELECT EXISTS (SELECT 1 FROM $wpdb->posts WHERE ID = %d)", $order_id))) {
             return true;
         }
 
