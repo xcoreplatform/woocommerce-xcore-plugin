@@ -1,8 +1,8 @@
 === xCore WooCommerce API extension ===
 Tags: woocommerce, connect, exact, exact online, xcore, d4d, dealer4dealer
-Requires at least: 4.7.5
-Tested up to: 5.6.0
-Stable tag: 1.10.2
+Requires at least: 5.3.0
+Tested up to: 6.2.2
+Stable tag: 1.12.0
 License: The MIT License (MIT)
 
 This module extends the api of Woocommerce and is needed for the usage of the xCore. For more information or support see https://xcore.nl.
