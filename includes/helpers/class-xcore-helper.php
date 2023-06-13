@@ -127,8 +127,7 @@ class Xcore_Helper extends Xcore_Data_Helper {
 		} catch ( Exception $e ) {
 			return $info;
 		}
-
-		return apply_filters('xcore_site_information', $info);
+		return $info;
 	}
 
 	private function set_dummy_prop($prop, $data = null)

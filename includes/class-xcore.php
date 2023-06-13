@@ -3,7 +3,7 @@
 defined( 'ABSPATH' ) || exit;
 
 class Xcore {
-	private $_version            = '1.12.0';
+	private $_version            = '1.12.1';
 	private static $_instance    = null;
     private        $_xcoreHelper = null;
 
@@ -101,6 +101,16 @@ class Xcore {
 						'callback' => [ WP_REST_Taxonomies_Controller::class, 'get_item' ],
 					]
 				);
+
+				register_rest_route(
+					'wc-xcore/v1',
+					'options',
+					[
+						'methods'  => WP_REST_Server::EDITABLE,
+						'callback' => [ $this, 'processOptions' ],
+						'permission_callback' => [ $this, 'get_items_permissions_check' ],
+					]
+				);
 				$this->init_classes();
 			}
 		);
@@ -136,6 +146,23 @@ class Xcore {
         if (is_plugin_active('customer-specific-pricing-for-woocommerce/customer-specific-pricing-for-woocommerce.php')) {
             $this->enableCspRestSupport();
         }
+	}
+
+	public function processOptions($request)
+	{
+		$key =  $request->get_param('id');
+		$data = $request->get_param('options');
+
+		$sets = get_option( '_a_category_pricing_rules' );
+
+
+		if ( $sets && is_array( $sets ) && count( $sets ) > 0 ) {
+			foreach ($data as $key => $value) {
+				$x = array_key_first( $value);
+				$sets[$x] = $value[$x];
+			}
+		}
+		return update_option( '_a_category_pricing_rules', $sets);
 	}
 
 	public function xCoreSearchUserByMeta($arguments, $request)
@@ -181,16 +208,6 @@ class Xcore {
 		}
 
 		return $customer;
-	}
-
-	public function setXcorePostType($args)
-	{
-//		die(print_r($args, true));
-		return ['product, product_variation'];
-	}
-	public function setXcoreOrder($args)
-	{
-		return 'asc';
 	}
 
 	/**
