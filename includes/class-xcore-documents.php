@@ -199,7 +199,7 @@ class Xcore_Documents
     private function upload_file($file)
     {
         $base64Document    = $file['media_data_base64_encoded'];
-        $filename          = $this->generateFilename($file);
+        $filename          = $this->getFileName($file);
         $documentData      = base64_decode($base64Document);
         $filenameSanitized = sanitize_file_name($filename);
         $date              = date("Y/m", strtotime($this->data['date_created']));
@@ -322,12 +322,14 @@ class Xcore_Documents
         }
     }
 
-    private function generateFilename($file)
+    private function getFileName($file)
     {
-        $fileExtension = $file['file_extension'];
-        $documentType  = $this->data['document_type'];
-        $documentId    = $this->data['document_id'];
+        $fileName = $file['original_filename'];
 
-        return sprintf('%s_%s.%s', $documentType, $documentId, $fileExtension);
+        if (isset($file['custom_filename']) && $file['custom_filename']) {
+            $fileName = $file['custom_filename'];
+        }
+
+        return $fileName;
     }
 }

@@ -114,6 +114,7 @@ class Xcore_Helper extends Xcore_Data_Helper {
 				"theme"               => get_stylesheet(),
 				"permalink_structure" => get_option( 'permalink_structure' ),
 				"current_language"    => get_locale(),
+				"decimal_separator"   => $string = wc_get_price_decimal_separator(),
 			];
 
 			$info['dir'] = [
