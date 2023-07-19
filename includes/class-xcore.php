@@ -98,7 +98,9 @@ class Xcore {
 					'taxonomy' . '/(?P<taxonomy>[\w-]+)',
 					[
 						'methods'  => WP_REST_Server::READABLE,
-						'callback' => [ WP_REST_Taxonomies_Controller::class, 'get_item' ],
+						'callback' => [WP_REST_Taxonomies_Controller::class, 'get_item'],
+						'permission_callback' => [WP_REST_Taxonomies_Controller::class, 'get_items_permissions_check'],
+
 					]
 				);
 

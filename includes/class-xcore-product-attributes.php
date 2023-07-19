@@ -18,6 +18,7 @@ class Xcore_Product_Attributes extends WC_REST_Product_Attributes_Controller
     public function __construct()
     {
         $this->init();
+        add_filter('woocommerce_attribute_taxonomies', [$this, 'filter_wc_attributes']);
     }
 
     /**
@@ -33,6 +34,26 @@ class Xcore_Product_Attributes extends WC_REST_Product_Attributes_Controller
                 'callback'            => array($this, 'get_items'),
                 'permission_callback' => array($this, 'get_items_permissions_check'),
                 'args'                => $this->get_collection_params(),
+            )
+        );
+
+        register_rest_route(
+            $this->namespace,
+            $this->base,
+            array(
+                'methods'             => WP_REST_Server::CREATABLE,
+                'callback'            => array( $this, 'create_item' ),
+                'permission_callback' => array( $this, 'create_item_permissions_check' ),
+                'args'                => array_merge(
+                    $this->get_endpoint_args_for_item_schema( WP_REST_Server::CREATABLE ),
+                    array(
+                        'name' => array(
+                            'description' => __( 'Name for the resource.', 'woocommerce' ),
+                            'type'        => 'string',
+                            'required'    => true,
+                        ),
+                    )
+                ),
             )
         );
 
@@ -55,10 +76,17 @@ class Xcore_Product_Attributes extends WC_REST_Product_Attributes_Controller
      * in the same call, to limit requests.
      *
      * @param WP_REST_Request $request
-     * @return array
+     *
+     * @return array|stdClass|WP_Error|WP_REST_Request
      */
     public function get_items($request)
     {
+        if ($request->has_param('search')) {
+            $attributeId = wc_attribute_taxonomy_id_by_name($request->get_param('search'));
+            $request->set_param('id', $attributeId);
+            return $this->get_item( $request );
+        }
+
         $attributes = parent::get_items($request);
 
         if ($request['add_options'] == true) {
