@@ -18,7 +18,6 @@ class Xcore_Product_Attributes extends WC_REST_Product_Attributes_Controller
     public function __construct()
     {
         $this->init();
-        add_filter('woocommerce_attribute_taxonomies', [$this, 'filter_wc_attributes']);
     }
 
     /**
