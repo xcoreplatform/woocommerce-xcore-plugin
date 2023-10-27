@@ -595,12 +595,23 @@ class Xcore_Products extends WC_REST_Products_Controller
             $currentImage     = current($images);
             $currentImageName = $currentImage && isset($currentImage['name']) ? $currentImage['name'] : null;
 
-            if ($currentImageName && !$this->fileAlreadyExists($files['productImage'], [$currentImageName]) ) {
-                array_unshift($images, [ "src" => sprintf('%s/%s', $baseUrl, $files['productImage']) ]);
+            /**
+             * If the image name already exists replace the current product image. If not, add it to the
+             * beginning of the array.
+             */
+            if ($currentImageName && $this->fileAlreadyExists($files['productImage'], [$currentImageName])) {
+                $images[0] = [
+                    "src" => sprintf('%s/%s', $baseUrl, $files['productImage'])
+                ];
+            } else {
+                array_unshift($images, [
+                        "src" => sprintf('%s/%s', $baseUrl, $files['productImage'])
+                    ]
+                );
             }
         }
 
-        if (isset($files['images']) && is_array($files['images'])) {
+        if ($files['images'] && is_array($files['images'])) {
             $currentImageNames = array_column($images, 'name');
             foreach ($files['images'] as $image) {
                 if ($this->fileAlreadyExists($image, $currentImageNames)) {
@@ -612,7 +623,7 @@ class Xcore_Products extends WC_REST_Products_Controller
 
         $request->set_param( 'images', $images );
 
-        if (isset($files['downloads']) && is_array($files['downloads'])) {
+        if ($files['downloads'] && is_array($files['downloads'])) {
             $downloads            = $product ? $this->get_downloads( $product ) : [];
             $currentDownloadNames = array_column($downloads, 'name');
             foreach ($files['downloads'] as $file) {
@@ -633,8 +644,7 @@ class Xcore_Products extends WC_REST_Products_Controller
 
 	private function fileAlreadyExists($file, $currentFiles)
     {
-        $tmpFile = pathinfo(str_replace(' ', '20', $file), PATHINFO_FILENAME);
-
+		$tmpFile = sanitize_file_name($file);
         foreach ($currentFiles as $currentFile) {
             if (strpos($currentFile, $tmpFile) === 0)
             {

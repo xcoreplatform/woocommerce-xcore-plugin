@@ -3,7 +3,7 @@
 defined( 'ABSPATH' ) || exit;
 
 class Xcore {
-	private $_version            = '1.12.2';
+	private $_version            = '1.12.3';
 	private static $_instance    = null;
     private        $_xcoreHelper = null;
 
@@ -157,8 +157,11 @@ class Xcore {
 
 		$sets = get_option( '_a_category_pricing_rules' );
 
+		if (!$sets) {
+			return update_option( '_a_category_pricing_rules', $data[0]);
+		}
 
-		if ( $sets && is_array( $sets ) && count( $sets ) > 0 ) {
+		if ($sets && is_array( $sets ) && count( $sets ) > 0 ) {
 			foreach ($data as $key => $value) {
 				$x = array_key_first( $value);
 				$sets[$x] = $value[$x];
@@ -349,12 +352,16 @@ class Xcore {
      */
     public function enableCspRestSupport()
     {
-        /**
-         * Disable hash validation
-         */
-        add_filter('cspapi_is_api_hash_valid', '__return_true');
-        add_filter( 'woocommerce_rest_prepare_product_object', [ $this, 'addCspResponseData' ], 10, 3 );
-        add_filter('xcore_rest_product_update_request', [$this, 'processCspData']);
+        $cspSettings = get_option('wdm_csp_settings');
+
+        if (isset($cspSettings['csp_api_status']) && $cspSettings['csp_api_status'] === 'enable') {
+            /**
+	         * Disable hash validation
+	         */
+	        add_filter('cspapi_is_api_hash_valid', '__return_true');
+	        add_filter( 'woocommerce_rest_prepare_product_object', [ $this, 'addCspResponseData' ], 10, 3 );
+	        add_filter('xcore_rest_product_update_request', [$this, 'processCspData']);
+        }
     }
 
     /**

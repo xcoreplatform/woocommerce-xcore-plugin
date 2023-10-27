@@ -38,7 +38,7 @@ class Xcore_Customers extends WC_REST_Customers_Controller
             array(
                 'methods'             => WP_REST_Server::READABLE,
                 'callback'            => array($this, 'find_by_meta'),
-                'permission_callback' => array($this, '__return_true'),
+                'permission_callback' => array($this, 'create_item_permissions_check'),
                 'args'                => $this->get_collection_params(),
             )
         );
