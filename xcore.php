@@ -5,7 +5,7 @@ include_once(ABSPATH . 'wp-admin/includes/plugin.php');
    Plugin Name: xCore Rest API extension
    Plugin URI: https://xcore.nl/
    description: This plugin adds additional functionality to the Woocommerce Rest API to support the features provided by our xCore platform.
-   @Version: 1.12.4-rc.1
+   @Version: 1.12.4-rc.2
    @Author: Dealer4Dealer
    Author URI: https://xcore.nl/
    Requires at least: 5.3.0

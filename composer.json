@@ -13,5 +13,5 @@
 	"require": {
 		"php" : ">=7.2.0"
 	},
-	"version": "1.12.4-rc.1"
+	"version": "1.12.4-rc.2"
 }
