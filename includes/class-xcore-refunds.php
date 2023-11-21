@@ -65,7 +65,7 @@ class Xcore_Refunds extends WC_REST_Order_Refunds_Controller
     public function initHooks()
     {
 		if ( OrderUtil::custom_orders_table_usage_is_enabled() ) {
-			add_filter( 'woocommerce_order_query_args', [ $this, 'xcoreGetAllRefunds' ], 10, 1 );
+			add_filter( 'woocommerce_order_query_args', [ $this, 'xcoreGetAllRefundsHpos' ], 10, 1 );
 		} else {
 			add_filter( 'pre_get_posts', [ $this, 'xcoreGetAllRefunds' ], 10, 1 );
 		}
@@ -75,6 +75,12 @@ class Xcore_Refunds extends WC_REST_Order_Refunds_Controller
     public function xcoreGetAllRefunds( WP_Query $query )
 	{
 		$query->query_vars['post_parent__in'] = [];
+		return $query;
+	}
+
+	public function xcoreGetAllRefundsHpos( Array $query )
+	{
+		$query['post_parent__in'] = [];
 		return $query;
 	}
 
