@@ -5,7 +5,7 @@ include_once(ABSPATH . 'wp-admin/includes/plugin.php');
    Plugin Name: xCore Rest API extension
    Plugin URI: https://xcore.nl/
    description: This plugin adds additional functionality to the Woocommerce Rest API to support the features provided by our xCore platform.
-   @Version: 1.12.3
+   @Version: 1.12.4
    @Author: Dealer4Dealer
    Author URI: https://xcore.nl/
    Requires at least: 5.3.0
@@ -44,6 +44,15 @@ add_action(
 	        include_once __DIR__ . '/includes/class-xcore.php';
 
 	        Xcore::get_instance();
+        }
+    }
+);
+
+add_action(
+    'before_woocommerce_init',
+    function() {
+        if (class_exists( \Automattic\WooCommerce\Utilities\FeaturesUtil::class)) {
+            \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'custom_order_tables', __FILE__, true );
         }
     }
 );

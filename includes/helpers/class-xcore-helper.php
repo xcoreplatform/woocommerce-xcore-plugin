@@ -107,14 +107,15 @@ class Xcore_Helper extends Xcore_Data_Helper {
 
 		try {
 			$info['base'] = [
-				"version"             => $wp_version,
-				"plugin_version"      => Xcore::get_instance()->xcore_api_version(),
-				"woocommerce_version" => WC()->version,
-				"multisite"           => is_multisite(),
-				"theme"               => get_stylesheet(),
-				"permalink_structure" => get_option( 'permalink_structure' ),
-				"current_language"    => get_locale(),
-				"decimal_separator"   => wc_get_price_decimal_separator(),
+				"version"                        => $wp_version,
+				"plugin_version"                 => Xcore::get_instance()->xcore_api_version(),
+				"woocommerce_version"            => WC()->version,
+				"multisite"                      => is_multisite(),
+				"theme"                          => get_stylesheet(),
+				"permalink_structure"            => get_option( 'permalink_structure' ),
+				"current_language"               => get_locale(),
+				"decimal_separator"              => wc_get_price_decimal_separator(),
+				'high_perforamnce_order_storage' => $this->hposStatus(),
 			];
 
 			$info['dir'] = [
@@ -186,13 +187,14 @@ class Xcore_Helper extends Xcore_Data_Helper {
 
 	private function get_base_data() {
 		$data['base'] = [
-			'plugin_version'      => Xcore::get_instance()->xcore_api_version(),
-			"version"             => '',
-			"woocommerce_version" => '',
-			"multisite"           => '',
-			"rest_url"            => '',
-			"theme"               => '',
-			"permalink_structure" => '',
+			'plugin_version'                 => Xcore::get_instance()->xcore_api_version(),
+			"version"                        => '',
+			"woocommerce_version"            => '',
+			"multisite"                      => '',
+			"rest_url"                       => '',
+			"theme"                          => '',
+			"permalink_structure"            => '',
+			"high_perforamnce_order_storage" => '',
 		];
 
 		$data['dir'] = [
@@ -209,4 +211,17 @@ class Xcore_Helper extends Xcore_Data_Helper {
 
 		return $data;
 	}
+
+private function hposStatus()
+{
+	if (!class_exists( \Automattic\WooCommerce\Utilities\OrderUtil::class)) {
+		return 'unknown';
+	}
+
+	if (\Automattic\WooCommerce\Utilities\OrderUtil::custom_orders_table_usage_is_enabled()) {
+		return 'enabled';
+	}
+
+	return 'disabled';
+}
 }

@@ -2,8 +2,12 @@
 
 defined('ABSPATH') || exit;
 
+use Automattic\WooCommerce\Utilities\OrderUtil;
+
 class Xcore_Refunds extends WC_REST_Order_Refunds_Controller
 {
+
+
     protected static $_instance = null;
     public           $version   = '1';
     public           $namespace = 'wc-xcore/v1';
@@ -60,13 +64,23 @@ class Xcore_Refunds extends WC_REST_Order_Refunds_Controller
 
     public function initHooks()
     {
-        add_filter( 'pre_get_posts', [ $this, 'xcoreGetAllRefunds' ], 10, 1 );
+		if ( OrderUtil::custom_orders_table_usage_is_enabled() ) {
+			add_filter( 'woocommerce_order_query_args', [ $this, 'xcoreGetAllRefundsHpos' ], 10, 1 );
+		} else {
+			add_filter( 'pre_get_posts', [ $this, 'xcoreGetAllRefunds' ], 10, 1 );
+		}
     }
 
 
     public function xcoreGetAllRefunds( WP_Query $query )
 	{
 		$query->query_vars['post_parent__in'] = [];
+		return $query;
+	}
+
+	public function xcoreGetAllRefundsHpos( Array $query )
+	{
+		$query['post_parent__in'] = [];
 		return $query;
 	}
 
