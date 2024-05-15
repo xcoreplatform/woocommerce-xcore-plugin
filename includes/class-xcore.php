@@ -29,30 +29,31 @@ class Xcore {
 	 */
 	public function init()
 	{
-		add_filter('woocommerce_before_product_object_save', function($product, $dataStore) {
-            global $wp_filter;
-            if (class_exists('Xcore_Products') && has_filter('wp_insert_post_data', [$this->Xcore_Products, 'filter_stock_updates'])) {
-                return $product;
-            }
+	    add_filter('woocommerce_after_product_object_save', function($product, $dataStore) {
+			global $wp_filter;
+			if (class_exists('Xcore_Products') && has_filter('wp_insert_post_data', [$this->Xcore_Products, 'filter_stock_updates'])) {
+				return $product;
+			}
 
-            if ($product->get_type() == 'variable') {
-                global $wpdb;
+			if ($product->get_type() == 'variable' && $product->get_id()) {
+				global $wpdb;
+		
+				$data = [
+				'post_modified'     => current_time( 'mysql' ),
+				'post_modified_gmt' => current_time( 'mysql', 1 ),
+				];
+		
+				$where = [
+				'post_parent' => $product->get_id(),
+				'post_type'   => 'product_variation',
+				];
+		
+				$wpdb->update($wpdb->posts, $data, $where);
+			}
+			$has_run = true;
 
-                $data = [
-                    'post_modified'     => current_time( 'mysql' ),
-                    'post_modified_gmt' => current_time( 'mysql', 1 ),
-                ];
-
-                $where = [
-                    'post_parent' => $product->get_id()
-                ];
-
-                $wpdb->update($wpdb->posts, $data, $where);
-            }
-            $has_run = true;
-
-            return $product;
-        }, 10, 2);
+			return $product;
+	        }, 10, 2);
 
 		if ( ! $this->isXcoreRequest() ) {
 			return;
