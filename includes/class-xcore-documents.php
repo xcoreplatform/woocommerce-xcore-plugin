@@ -244,12 +244,22 @@ class Xcore_Documents
             return false;
         }
 
-        if ($this->user_id_valid) {
-            $this->attach($file, 'customer');
+		$meta_key        = sprintf('xcore_%s', $this->data['document_type']);
+	    $document_id     = $this->data['document_id'];
+	    $args['files'][] = $file;
+
+        if ($this->user_id_valid && $this->data['customer_id']) {
+            $customer = new WC_Customer($this->data['customer_id']);
+			$this->addDocumentMeta($customer, $args, $meta_key, $document_id);
+
         }
 
         if (is_numeric($this->data['order_id'])) {
-            $this->attach($file, 'order');
+            $order = wc_get_order($this->data['order_id']);
+
+            if ($order instanceof \WC_Order) {
+	            $this->addDocumentMeta($order, $args, $meta_key, $document_id);
+            }
         }
 
         return true;
@@ -258,10 +268,12 @@ class Xcore_Documents
     private function check_file($file)
     {
         if ($file['error']) {
+            $this->log( 'debug', sprintf('Error processing file %s. %s', $file['file'], $file['error']));
             return false;
         }
 
         if (!file_exists($file['file'])) {
+            $this->log( 'debug', sprintf('File %s not found, unable to add as metadata', $file['file']));
             return false;
         }
         return true;
@@ -286,40 +298,34 @@ class Xcore_Documents
         return false;
     }
 
-    private function attach($file, $type)
+    private function addDocumentMeta($object, $data, $meta_key, $document_id)
     {
-        $meta_key        = sprintf('xcore_%s', $this->data['document_type']);
-        $document_id     = $this->data['document_id'];
-        $id              = ($type == 'customer') ? $this->data['customer_id'] : $this->data['order_id'];
-        $args['files'][] = $file;
+        $currentMeta = $object->get_meta($meta_key, true);
+		$objectType  = $object instanceof \WC_Order ? 'order' : 'customer';
 
-        $this->add_meta_data($id, $type, $args, $meta_key, $document_id);
-    }
-
-    private function add_meta_data($id, $type, $data, $meta_key, $document_id)
-    {
-        $meta_type   = ($type == 'customer') ? 'user' : 'post';
-        $currentMeta = get_metadata($meta_type, $id, $meta_key, true);
-
-        if ($currentMeta === false) {
+		if ($currentMeta === false) {
+			$this->log( 'debug', sprintf('Unable to get metadata for %s (%s)', $objectType, $object->get_id()));
             return;
         }
 
-        if (empty($currentMeta)) {
-            add_metadata($meta_type, $id, $meta_key, $data, true);
-            return;
+		$newFile       = reset($data['files']);
+		$existingFiles = [];
+
+        if (is_array($currentMeta) && array_key_exists('files', $currentMeta)) {
+			$existingFiles = $currentMeta['files'];
         }
 
-        if (!isset($currentMeta['files'])) {
-            update_metadata($meta_type, $id, $meta_key, $data, $currentMeta);
-            return;
-        }
+		if (!in_array($document_id, array_column($existingFiles, 'document_id'))) {
+			$existingFiles[] = $newFile;
+			$object->update_meta_data($meta_key, $data);
+			$result = $object->save();
 
-        if (isset($currentMeta['files']) && array_search($document_id, array_column($currentMeta['files'], 'document_id')) === false) {
-            $metaFiles = $currentMeta;
-            array_push($metaFiles['files'], $data['files'][0]);
-            update_metadata($meta_type, $id, $meta_key, $metaFiles, $currentMeta);
-        }
+			if (!is_numeric($result)) {
+				$this->log( 'debug', sprintf('Unable to save %s (%s), metadata was not saved', $objectType, $object->get_id()));
+			}
+		} else {
+			$this->log( 'debug', sprintf('Document %s already exists on %s %s, skipping. ', $document_id, $objectType, $object->get_id()));
+		}
     }
 
     private function getFileName($file)
@@ -331,5 +337,15 @@ class Xcore_Documents
         }
 
         return $fileName;
+    }
+
+    private function log($level, $logMsg)
+    {
+        $source = ['source' => 'xcore-rest-api'];
+        $logger = wc_get_logger();
+
+        if ($logger) {
+            $logger->log($level, $logMsg, $source);
+        }
     }
 }
