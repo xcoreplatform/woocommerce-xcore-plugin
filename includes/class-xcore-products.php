@@ -588,6 +588,18 @@ class Xcore_Products extends WC_REST_Products_Controller
 		return $params;
 	}
 
+	public function get_item_schema()
+	{
+		$schema = parent::get_item_schema();
+
+		/*
+		 * Add variation as enum to avoid rest_not_in_enum errors
+		 */
+		$schema['properties']['type']['enum'][] = 'variation';
+
+		return $schema;
+	}
+
 	private function attachFiles( $request, $files, $baseUrl, $product = null ) {
 		$images = $product ? $this->get_images( $product ) : [];
 
