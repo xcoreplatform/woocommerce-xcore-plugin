@@ -246,19 +246,17 @@ class Xcore_Documents
 
 		$meta_key        = sprintf('xcore_%s', $this->data['document_type']);
 	    $document_id     = $this->data['document_id'];
-	    $args['files'][] = $file;
 
         if ($this->user_id_valid && $this->data['customer_id']) {
             $customer = new WC_Customer($this->data['customer_id']);
-			$this->addDocumentMeta($customer, $args, $meta_key, $document_id);
-
+			$this->addDocumentMeta($customer, $file, $meta_key, $document_id);
         }
 
         if (is_numeric($this->data['order_id'])) {
             $order = wc_get_order($this->data['order_id']);
 
             if ($order instanceof \WC_Order) {
-	            $this->addDocumentMeta($order, $args, $meta_key, $document_id);
+	            $this->addDocumentMeta($order, $file, $meta_key, $document_id);
             }
         }
 
@@ -298,7 +296,7 @@ class Xcore_Documents
         return false;
     }
 
-    private function addDocumentMeta($object, $data, $meta_key, $document_id)
+    private function addDocumentMeta($object, $newFile, $meta_key, $document_id)
     {
         $currentMeta = $object->get_meta($meta_key, true);
 		$objectType  = $object instanceof \WC_Order ? 'order' : 'customer';
@@ -308,16 +306,14 @@ class Xcore_Documents
             return;
         }
 
-		$newFile       = reset($data['files']);
-		$existingFiles = [];
-
+		$files = [];
         if (is_array($currentMeta) && array_key_exists('files', $currentMeta)) {
-			$existingFiles = $currentMeta['files'];
+			$files = $currentMeta['files'];
         }
 
-		if (!in_array($document_id, array_column($existingFiles, 'document_id'))) {
-			$existingFiles[] = $newFile;
-			$object->update_meta_data($meta_key, $data);
+		if (!in_array($document_id, array_column($files, 'document_id'))) {
+			$files[] = $newFile;
+			$object->update_meta_data($meta_key, ['files' => $files]);
 			$result = $object->save();
 
 			if (!is_numeric($result)) {
