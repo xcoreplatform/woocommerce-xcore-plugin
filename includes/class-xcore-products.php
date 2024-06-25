@@ -368,6 +368,8 @@ class Xcore_Products extends WC_REST_Products_Controller
             if (!$object->get_parent_id()) {
                 return new WP_Error('woocommerce_rest_missing_variation_data', __('Missing parent ID.', 'woocommerce'), 400);
             }
+
+			$this->setCorrectVariationStatus($request);
             $request->set_param('product_id', $object->get_parent_id());
 
             $controller = new Xcore_Product_Variations($this->_xcoreHelper);
@@ -598,6 +600,21 @@ class Xcore_Products extends WC_REST_Products_Controller
 		$schema['properties']['type']['enum'][] = 'variation';
 
 		return $schema;
+	}
+
+	/*
+	 * In some rare cases we do not know we're dealing with a variation and set the
+	 * catalog_visibility to show/hide a product. This method remedies this problem by
+	 * checking if catalog_visibility is sent with the request and set the status based
+	 * on its value.
+	 */
+	private function setCorrectVariationStatus($request)
+	{
+		$visibility = $request->get_param('catalog_visibility');
+
+        if ($visibility) {
+            $request->set_param('status', $visibility === 'visible' ? 'publish' : 'private');
+        }
 	}
 
 	private function attachFiles( $request, $files, $baseUrl, $product = null ) {
