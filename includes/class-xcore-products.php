@@ -345,6 +345,8 @@ class Xcore_Products extends WC_REST_Products_Controller
             if (!$object->get_parent_id()) {
                 return new WP_Error('woocommerce_rest_missing_variation_data', __('Missing parent ID.', 'woocommerce'), 400);
             }
+
+			$this->setCorrectVariationStatus($request);
             $request->set_param('product_id', $object->get_parent_id());
 
             $controller = new Xcore_Product_Variations($this->_xcoreHelper);
