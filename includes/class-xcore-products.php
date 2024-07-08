@@ -577,18 +577,7 @@ class Xcore_Products extends WC_REST_Products_Controller
 		return $schema;
 	}
 
-	/**
-	 * We use a single call to retrieve a list of products to process. This adds
-	 * both product and product_variation to our query to obtain a complete list
-	 * of products without the need for a second call. This also makes it easier
-	 * to update variations without the need to process all variations for a
-	 * specific variable product.
-	 *
-	 * @param WP_REST_Request $query
-	 *
-	 * @return array
-	 */
-    protected function prepare_objects_query($request)
+	protected function prepare_objects_query($request)
     {
 		$args = parent::prepare_objects_query($request);
 
@@ -600,6 +589,21 @@ class Xcore_Products extends WC_REST_Products_Controller
 
 		return $args;
     }
+
+	/*
+	 * In some rare cases we do not know we're dealing with a variation and set the
+	 * catalog_visibility to show/hide a product. This method remedies this problem by
+	 * checking if catalog_visibility is sent with the request and set the status based
+	 * on its value.
+	 */
+	private function setCorrectVariationStatus($request)
+	{
+		$visibility = $request->get_param('catalog_visibility');
+
+        if ($visibility) {
+            $request->set_param('status', $visibility === 'visible' ? 'publish' : 'private');
+        }
+	}
 
 	private function attachFiles( $request, $files, $baseUrl, $product = null ) {
 		$images = $product ? $this->get_images( $product ) : [];
