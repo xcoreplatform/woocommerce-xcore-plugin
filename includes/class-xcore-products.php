@@ -132,32 +132,9 @@ class Xcore_Products extends WC_REST_Products_Controller
 
     public function initHooks()
     {
-        add_filter( 'pre_get_posts', [ $this, 'xcoreGetAllProductTypes' ], 10, 1 );
         add_filter( 'woocommerce_rest_prepare_product_object', [ $this, 'addProductMeta' ], 20, 2 );
 		add_filter( 'woocommerce_rest_prepare_product_variation_object',[ $this, 'addProductMeta' ], 20,3 );
     }
-
-	/**
-	 * We use a single call to retrieve a list of products to process. This adds
-	 * both product and product_variation to our query to obtain a complete list
-	 * of products without the need for a second call. This also makes it easier
-	 * to update variations without the need to process all variations for a
-	 * specific variable product.
-	 *
-	 * @param WP_Query $query
-	 *
-	 * @return WP_Query
-	 */
-    public function xcoreGetAllProductTypes(WP_Query $query)
-	{
-		if (is_array($query->query_vars['post_type']) && !in_array('product_variation', $query->query_vars['post_type'], true)) {
-			$query->query_vars['post_type'][] = 'product_variation';
-		} elseif ($query->query_vars['post_type'] === 'product') {
-			$query->query_vars['post_type'] = ['product', 'product_variation'];
-		}
-
-		return $query;
-	}
 
     public function addProductMeta( $response, $product ) {
 		if ( $response->data['status'] == 'draft' && $response->data['date_created'] === null ) {
@@ -601,6 +578,19 @@ class Xcore_Products extends WC_REST_Products_Controller
 
 		return $schema;
 	}
+
+	protected function prepare_objects_query($request)
+    {
+		$args = parent::prepare_objects_query($request);
+
+		if (is_array($args['post_type']) && !in_array('product_variation', $args['post_type'], true)) {
+			$args['post_type'][] = 'product_variation';
+		} elseif($args['post_type'] === 'product') {
+			$args['post_type'] = ['product', 'product_variation'];
+		}
+
+		return $args;
+    }
 
 	/*
 	 * In some rare cases we do not know we're dealing with a variation and set the
