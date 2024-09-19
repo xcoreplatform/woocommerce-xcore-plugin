@@ -1,12 +1,12 @@
 {
-	"name": "dealer4dealer/woocommerce-xcore-plugin",
+	"name": "xcoreplatform/woocommerce-xcore-plugin",
 	"description": "xCore WooCommerce API extension",
 	"type": "wordpress-plugin",
-	"homepage": "https://www.xcore.nl",
+	"homepage": "https://xcore.nl",
 	"license": "GPL-2.0-only",
 	"authors": [
 		{
-			"name": "Dealer4Dealer",
+			"name": "xCore",
 			"email": "info@xcore.nl"
 		}
 	],
