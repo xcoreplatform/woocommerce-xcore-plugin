@@ -1,45 +1,58 @@
 <?php
-include_once( ABSPATH . 'wp-admin/includes/plugin.php' );
+
+include_once(ABSPATH . 'wp-admin/includes/plugin.php');
 /*
    Plugin Name: xCore Rest API extension
-   Plugin URI: http://xcore.dealer4dealer.nl
-   description: Extend WC Rest API to support xCore requests
-   @Version: 1.8.2
+   Plugin URI: https://xcore.nl/
+   description: This plugin adds additional functionality to the Woocommerce Rest API to support the features provided by our xCore platform.
+   @Version: 1.12.4
    @Author: Dealer4Dealer
-   Author URI: http://www.dealer4dealer.nl
-   Requires at least: 4.7.5
-   Tested up to: 5.2.1
+   Author URI: https://xcore.nl/
+   Requires at least: 5.3.0
+   Tested up to: 6.2.2
    License: GPL2
-   WC requires at least: 3.3.0
-   WC tested up to: 3.6.4
+   WC requires at least: 5.8.0
+   WC tested up to: 7.7.2
    */
 
 if (!defined('ABSPATH')) {
     exit;
 }
 
-/**
- * Check if WooCommerce is active
- **/
-if (!is_plugin_active( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', get_option( 'active_plugins' ) ) ) ) {
-    add_action( 'admin_notices', 'woocommerce_not_activated' );
-    return;
+if( ! function_exists('get_plugin_data') ){
+    require_once( ABSPATH . 'wp-admin/includes/plugin.php' );
 }
 
-add_action('woocommerce_loaded', function() {
-    include_once dirname(__FILE__) . '/includes/helpers/abstract-xcore-data-helper.php';
-    include_once dirname(__FILE__) . '/includes/helpers/class-xcore-helper.php';
-    include_once dirname(__FILE__) . '/includes/class-xcore.php';
+if (!is_plugin_active( 'woocommerce/woocommerce.php')) {
+	add_action('admin_notices', static function () {
+		?>
+        <div class="error notice">
+            <p><b><?php
+					_e( 'xCore Rest API extension requires WooCommerce to be activated to work.',
+						'https://www.xcore.nl' ); ?></b></p>
+        </div>
+		<?php
+	});
+}
 
-    if(class_exists('Xcore') ) {
-        return Xcore::get_instance();
+add_action(
+    'woocommerce_loaded',
+    static function () {
+        if (!class_exists('Xcore')) {
+	        include_once __DIR__ . '/includes/helpers/abstract-xcore-data-helper.php';
+	        include_once __DIR__ . '/includes/helpers/class-xcore-helper.php';
+	        include_once __DIR__ . '/includes/class-xcore.php';
+
+	        Xcore::get_instance();
+        }
     }
-});
+);
 
-function woocommerce_not_activated() {
-    ?>
-    <div class="error notice">
-        <p><b><?php _e( 'xCore Rest API extension requires WooCommerce to be activated to work.', 'http://www.dealer4dealer.nl' ); ?></b></p>
-    </div>
-    <?php
-}
+add_action(
+    'before_woocommerce_init',
+    function() {
+        if (class_exists( \Automattic\WooCommerce\Utilities\FeaturesUtil::class)) {
+            \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'custom_order_tables', __FILE__, true );
+        }
+    }
+);
