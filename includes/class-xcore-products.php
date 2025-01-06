@@ -164,11 +164,10 @@ class Xcore_Products extends WC_REST_Products_Controller
 		}
 
 		$controller = $request->get_param( 'type' ) == 'variation' ? new Xcore_Product_Variations( $this->_xcoreHelper ) : null;
-        $file = $this->processMedia($request);
 
-        if ($file) {
-            $request = $this->attachFile($request, $file);
-        }
+		if (isset($request['xcore_media'])) {
+			$this->processRequestFiles( $request );
+		}
 
 		if ( $request->get_param( 'type' ) == 'variation' ) {
 			$request->set_param( 'product_id', $request->get_param( 'parent_id' ) );
@@ -223,78 +222,6 @@ class Xcore_Products extends WC_REST_Products_Controller
     public function get_items($request)
     {
 		return parent::get_items( $request );
-        $request->set_param( 'post_type', [ 'product', 'product_variation' ]);
-        $request->set_param( 'orderby', 'modified ID');
-        $request->set_param( 'order', 'asc');
-        return parent::get_items( $request );
-
-		$request->set_param( 'order', 'asc');
-		$request->set_param( 'orderby', 'modified ID');
-		$request->set_param( 'post_type', [ 'product', 'product_variation' ]);
-		$request->set_param( 'status', [ 'any' ]);
-
-//        $defaultParams = [
-//			'order'    => 'asc',
-//			'orderby'  => 'modified ID',
-//			'per_page' => 250,
-//			'status'   => [ 'any' ],
-//			'page'     => 1,
-//		];
-//
-//		$request->set_default_params( $defaultParams );
-
-		if ( version_compare( WC()->version, '5.8.0', '>=' ) ) {
-			if ( $request['date_modified'] ) {
-				$date                      = $request['date_modified'];
-				$request['modified_after'] = $date;
-			}
-		}
-
-		return parent::get_items( $request );
-
-        $limit        = 50;
-        $date         = '2001-01-01 00:00:00';
-        $product_only = isset($request['product_only']) ? (int)$request['product_only'] : 0;
-
-        if (isset($request['limit']) && $request['limit']) {
-            $limit = (int)$request['limit'];
-        }
-
-        if (isset($request['date_modified']) && $request['date_modified']) {
-            $date = $request['date_modified'];
-        }
-
-        $products = new WP_Query(
-            [
-                'numberposts'    => -1,
-                'post_type'      => $product_only ? ['product'] : ['product', 'product_variation'],
-                'posts_per_page' => $limit,
-                'orderby'        => 'post_modified',
-                'order'          => 'ASC',
-                'date_query'     => [
-                    [
-                        'column'    => 'post_modified_gmt',
-                        'after'     => $date,
-                        'inclusive' => true,
-                    ],
-                ],
-            ]
-        );
-
-        $result = [];
-
-        foreach ($products->get_posts() as $product) {
-            $data['id']            = $product->ID;
-            $data['sku']           = get_post_meta($product->ID, '_sku', true) ?: null;
-            $data['type']          = (get_the_terms($product->ID, 'product_type')[0]) ? get_the_terms($product->ID, 'product_type')[0]->name : null;
-            $data['parent']        = $product->post_parent;
-            $data['date_created']  = new WC_DateTime($product->post_date_gmt);
-            $data['date_modified'] = new WC_DateTime($product->post_modified_gmt);
-
-            $result[] = $data;
-        }
-
-        return $result;
     }
 
     public function get_all_items($request)
@@ -326,19 +253,8 @@ class Xcore_Products extends WC_REST_Products_Controller
             return $this->updateStock($request, $object);
         }
 
-        $wpDirectories = wp_get_upload_dir();
-        $baseDir  = $wpDirectories['basedir'];
-        $baseUrl  = $wpDirectories['baseurl'];
-
-        $files = [];
-        if ( isset( $request['xcore_media'] ) ) {
-            $files = $this->processFiles($request['xcore_media'], $baseDir);
-
-            if(is_wp_error($files)) {
-                return $files;
-            }
-
-            $this->attachFiles($request, $files, $baseUrl, $object);
+        if (isset($request['xcore_media'])) {
+            $this->processRequestFiles($request, $object);
         }
 
         if ($object->is_type('variation')) {
@@ -346,17 +262,13 @@ class Xcore_Products extends WC_REST_Products_Controller
                 return new WP_Error('woocommerce_rest_missing_variation_data', __('Missing parent ID.', 'woocommerce'), 400);
             }
 
-			$this->setCorrectVariationStatus($request);
+            $this->setCorrectVariationStatus($request);
             $request->set_param('product_id', $object->get_parent_id());
 
             $controller = new Xcore_Product_Variations($this->_xcoreHelper);
             $response   = $controller->update_item($request);
         } else {
             $response = parent::update_item($request);
-        }
-
-        if ($files) {
-            $this->cleanUp($files, $baseDir);
         }
 
         return $response;
@@ -526,29 +438,275 @@ class Xcore_Products extends WC_REST_Products_Controller
         }
     }
 
-    public function upload_item_media($media, $uploadBasedir)
+    protected function get_images($product)
     {
-        $type    = $media['media_type'];
-        $sku     = $media['formatted_sku'];
-        $tmpDir  = $uploadBasedir;
-        $tmpFile = 'tmp_xcore_' . $sku . '.' . $media['file_extension'];
+        $productImages = parent::get_images( $product );
 
-        switch ($type) {
-            case 'image':
-                $base64Image = $media['media_data_base64_encoded'];
-                $imageData   = base64_decode($base64Image);
-                $file        = file_put_contents($tmpDir . "/" . $tmpFile, $imageData);
-
-                if ($file) {
-                    return $tmpFile;
-                }
-                return false;
-                break;
+        foreach ($productImages as $key => $productImage) {
+            $productImages[$key]['xcore_attachment_source_id'] = $this->getDocumentAttachmentId($productImage['id']);
         }
-        return false;
+        return $productImages;
     }
 
-	public function filter_stock_updates( $data, $postarr, $unsanitized_postarr ) {
+	/**
+	 * We use a single call to retrieve a list of products to process. This adds
+	 * both product and product_variation to our query to obtain a complete list
+	 * of products without the need for a second call. This also makes it easier
+	 * to update variations without the need to process all variations for a
+	 * specific variable product.
+	 *
+	 * @param WP_REST_Request $query
+	 *
+	 * @return array
+	 */
+    protected function prepare_objects_query($request)
+    {
+		$args = parent::prepare_objects_query($request);
+
+		if (is_array($args['post_type']) && !in_array('product_variation', $args['post_type'], true)) {
+			$args['post_type'][] = 'product_variation';
+		} elseif($args['post_type'] === 'product') {
+			$args['post_type'] = ['product', 'product_variation'];
+		}
+
+		return $args;
+    }
+
+	private function getFilesFromRequest($request)
+	{
+		$xcoreMedia = $request['xcore_media'];
+
+        /**
+         *
+         * Compatibility fix. Single product images are associative arrays while
+         * documents are multidimensional arrays
+         *
+         * */
+        $first = reset($xcoreMedia);
+        if ($first && !is_array($first)) {
+            $xcoreMedia['set_as_product_image'] = true;
+            $xcoreMedia                         = [$xcoreMedia];
+        }
+
+        $filteredMedia = apply_filters('xcore_filter_document_files', $xcoreMedia);
+
+        if (count($xcoreMedia) !== count($filteredMedia)) {
+			$before  = array_column($xcoreMedia, 'original_filename');
+			$after   = array_column($filteredMedia, 'original_filename');
+			$removed = array_diff($before, $after);
+
+			$this->log( 'info', sprintf('%s files (%s) were filtered out and will not be processed', count($removed), implode(', ', $removed)));
+        }
+
+        if (!$filteredMedia) {
+            return null;
+        }
+
+		return $filteredMedia;
+	}
+
+	private function processFeaturedImage($file, $product)
+	{
+		$filename = $file['original_filename'];
+
+		if (!$product || !$product instanceof WC_Product) {
+			return $this->processFile($file, $product);
+		}
+
+		$imageId   = $product->get_image_id();
+		$imagePost = get_post($imageId);
+		if ($imagePost->post_name === $filename) {
+			$this->log( 'debug', sprintf('Found existing image %s on product, deleting before proceeding.', $filename));
+			$this->deleteProductAttachments($imageId);
+		}
+
+		return $this->processFile($file, $product);
+	}
+
+	private function processGalleryImage($file, $product)
+	{
+
+	}
+
+	/*
+	 * get all product attachments
+	 * delete all without xcore_document_source_id
+	 * upload new
+	 * add all to product gallery
+	 */
+
+	private function processRequestFiles($request, $product = null):void
+    {
+        $files = $this->getFilesFromRequest($request);
+
+		if (!$files) {
+			// Nothing to process.
+			return;
+		}
+
+		$filesProcessed      = $this->processFiles($files, $product);
+		$newProductDownloads = $filesProcessed->productDownloads;
+		$newProductImages    = $filesProcessed->productImages;
+
+		if (isset($filesProcessed->featuredImage)) {
+			array_unshift( $newProductImages, $filesProcessed->featuredImage);
+		}
+
+		$currentDownloads    = $product ? array_column($this->get_downloads($product), 'id') : [];
+
+		if ($newProductDownloads) {
+			foreach ($currentDownloads as $downloadId) {
+				/**
+				 * Do not delete attachments that were added manually by checking if xcore_document_attachment_id is set.
+				 */
+				if (!$this->getDocumentAttachmentId($downloadId)) {
+					$newProductDownloads[] = $downloadId;
+				}
+			}
+		}
+
+		$newProductDownloads = array_unique($newProductDownloads);
+
+		if ($newProductDownloads) {
+			$this->deleteProductAttachments(array_diff($currentDownloads, $newProductDownloads));
+		}
+
+		$restApiImageIds = [];
+		foreach ($newProductImages as $newProductImage) {
+			$restApiImageIds[] = ['id' => $newProductImage];
+		}
+		$this->log('debug', sprintf('Added %s images', count($newProductImages)));
+
+		$restApiDownloadIds = [];
+		foreach ($newProductDownloads as $newProductDownload) {
+			$sourceUrl = wp_get_attachment_url($newProductDownload);
+
+			$restApiDownloadIds[] = [
+				'id'   => $newProductDownload,
+				'name' => basename($sourceUrl),
+				'file' => $sourceUrl
+			];
+		}
+		$this->log('debug', sprintf('Added %s downloads', count($newProductDownloads)));
+
+		unset($request['xcore_media']);
+
+		if ($restApiImageIds) {
+			$request->set_param('images', $restApiImageIds);
+		}
+
+		if ($restApiDownloadIds) {
+			$request->set_param('downloads', $restApiDownloadIds);
+			$request->set_param('downloadable', true);
+		}
+    }
+
+	private function processFiles($files, $product): stdClass
+	{
+		$currentImages = $this->getAllProductImageAttachments($product);
+		$fileContainer = new stdClass();
+
+		$fileContainer->productImages    = [];
+		$fileContainer->productDownloads = [];
+
+		foreach ($files as $file) {
+			$setAsProductImage    = $file['set_as_product_image'] ?? null;
+			$filename             = $file['original_filename'];
+			$existingGalleryImage = $currentImages[strtolower($filename)] ?? null;
+
+			if ($postId = $this->findOrphansByFilename($filename)) {
+				if ($setAsProductImage && $existingGalleryImage) {
+					$this->log( 'debug', sprintf('Orphan %s found, not processing new image. Using gallery image (%s) with the same name as product image', $postId, $existingGalleryImage));
+					$fileContainer->featuredImage = $existingGalleryImage;
+				} else {
+					$this->log( 'debug', sprintf('Orphan found (%s) for %s, skipping file.', $postId, $filename));
+				}
+				continue;
+			}
+
+			if ($existingGalleryImage) {
+				$this->log( 'debug', sprintf('Found existing image %s on product, deleting before proceeding.', $filename));
+				$this->deleteProductAttachments($existingGalleryImage);
+				unset($currentImages[strtolower($filename)]);
+			}
+
+			if ($setAsProductImage) {
+				$wpAttachmentId = $this->processFeaturedImage($file, $product);
+			} else {
+				$wpAttachmentId = $this->processFile($file, $product);
+			}
+
+			$imagePost = get_post($wpAttachmentId);
+			if ($imagePost->post_name === $filename) {
+				$this->log( 'debug', sprintf('Filename changed after upload, deleting %s', $filename));
+				$this->deleteProductAttachments($wpAttachmentId);
+				continue;
+			}
+
+			if (!$this->isValidAttachmentId($wpAttachmentId)) {
+				$this->log( 'debug', sprintf('Invalid attachment %s, skipping.', $filename));
+				continue;
+			}
+
+			if (!wp_attachment_is_image($wpAttachmentId)) {
+				$fileContainer->productDownloads[] = $wpAttachmentId;
+				continue;
+			}
+
+			if ($setAsProductImage) {
+				$fileContainer->featuredImage = $wpAttachmentId;
+			} else {
+				$fileContainer->productImages[] = $wpAttachmentId;
+			}
+		}
+
+		$fileContainer->productImages = array_unique(array_merge($fileContainer->productImages, array_values($currentImages)));
+
+		return $fileContainer;
+	}
+	private function checkAttachmentFileExistence($attachmentId)
+	{
+		if (!$attachmentId) {
+			return false;
+		}
+
+		$imagePath = get_attached_file($attachmentId);
+
+		if (file_exists($imagePath)) {
+			return $attachmentId;
+		}
+
+		$this->log( 'debug', sprintf('File %s does not exist, deleting attachment %s', $imagePath, $attachmentId));
+		$this->deleteProductAttachments($attachmentId);
+
+		return false;
+	}
+
+	private function getExistingAttachmentFromFile($file)
+	{
+		$postId = $file['product_file_id'] ?? null;
+
+		if ($this->checkAttachmentFileExistence($postId)) {
+			return $postId;
+		}
+
+		$postId = $this->findAttachtmentById($file['attachment_source_id'] ?? null);
+
+		return $this->checkAttachmentFileExistence($postId);
+	}
+    private function processFile($file, $product)
+    {
+		$attachmentId = $this->getExistingAttachmentFromFile($file);
+
+		if ($attachmentId) {
+			$this->log( 'debug', sprintf('Existing file %s (%s) found', $file, $attachmentId));
+			return $attachmentId;
+		}
+
+        return $this->saveFileAsAttachment($file, $product ? $product->get_id() : null);
+    }
+
+	public function filter_stock_updates($data, $postarr, $unsanitized_postarr) {
         if (isset($postarr['post_modified_gmt'])) {
 			$data['post_modified_gmt'] = wc_rest_prepare_date_response( $postarr['post_modified_gmt'] );
         }
@@ -558,12 +716,14 @@ class Xcore_Products extends WC_REST_Products_Controller
     /**
 	 * Set alternate default values
 	 */
-	public function get_collection_params() {
-		$params = parent::get_collection_params();
+	public function get_collection_params()
+	{
+		$params                             = parent::get_collection_params();
 		$params['per_page']['default']      = 50;
 		$params['order']['default']         = 'asc';
 		$params['orderby']['default']       = 'modified';
 		$params['dates_are_gmt']['default'] = true;
+		$params['type'][]                   = 'variation';
 		return $params;
 	}
 
@@ -579,18 +739,51 @@ class Xcore_Products extends WC_REST_Products_Controller
 		return $schema;
 	}
 
-	protected function prepare_objects_query($request)
-    {
-		$args = parent::prepare_objects_query($request);
+	private function hasDuplicateFileName($fileName)
+	{
+		$imageId = $this->getProductImageIdByFileName($fileName);
 
-		if (is_array($args['post_type']) && !in_array('product_variation', $args['post_type'], true)) {
-			$args['post_type'][] = 'product_variation';
-		} elseif($args['post_type'] === 'product') {
-			$args['post_type'] = ['product', 'product_variation'];
+		if (!$imageId) {
+			return null;
 		}
 
-		return $args;
-    }
+		return $imageId instanceof WP_Post ? $imageId->ID : $imageId;
+	}
+
+	private function findOrphansByFilename($filename)
+	{
+		$result = get_children(
+			[
+				'title' =>  $filename,
+			]
+		);
+		if (!$result || is_wp_error($result)) {
+			return null;
+		}
+
+		foreach ($result as $post) {
+			if (!$post->post_parent ) {
+				return $post->ID;
+			}
+		}
+		return null;
+	}
+
+	private function getProductImageIdByFileName($filename)
+	{
+		$result = get_children(
+			[
+				'title'       =>  $filename,
+				'post_type'   => ['attachment'],
+		        'post_status' => ['inherit'],
+			]
+		);
+
+		if (!$result || is_wp_error($result)) {
+			return null;
+		}
+		return is_array($result) ? reset($result) : null;
+	}
 
 	/*
 	 * In some rare cases we do not know we're dealing with a variation and set the
@@ -607,140 +800,169 @@ class Xcore_Products extends WC_REST_Products_Controller
         }
 	}
 
-	private function attachFiles( $request, $files, $baseUrl, $product = null ) {
-		$images = $product ? $this->get_images( $product ) : [];
+	private function isValidAttachmentId($imageId):bool
+	{
+		if (!$imageId || is_wp_error($imageId)) {
+			return false;
+		}
 
-        if (isset($files['productImage']) && $files['productImage']) {
-            $currentImage     = current($images);
-            $currentImageName = $currentImage && isset($currentImage['name']) ? $currentImage['name'] : null;
+		$imagePath = get_attached_file($imageId);
 
-            /**
-             * If the image name already exists replace the current product image. If not, add it to the
-             * beginning of the array.
-             */
-            if ($currentImageName && $this->fileAlreadyExists($files['productImage'], [$currentImageName])) {
-                $images[0] = [
-                    "src" => sprintf('%s/%s', $baseUrl, $files['productImage'])
-                ];
-            } else {
-                array_unshift($images, [
-                        "src" => sprintf('%s/%s', $baseUrl, $files['productImage'])
-                    ]
-                );
-            }
-        }
-
-        if ($files['images'] && is_array($files['images'])) {
-            $currentImageNames = array_column($images, 'name');
-            foreach ($files['images'] as $image) {
-                if ($this->fileAlreadyExists($image, $currentImageNames)) {
-                    continue;
-                }
-                $images[] = [ "src" => sprintf('%s/%s', $baseUrl, $image) ];
-            }
-        }
-
-        $request->set_param( 'images', $images );
-
-        if ($files['downloads'] && is_array($files['downloads'])) {
-            $downloads            = $product ? $this->get_downloads( $product ) : [];
-            $currentDownloadNames = array_column($downloads, 'name');
-            foreach ($files['downloads'] as $file) {
-                if ( in_array( $file, $currentDownloadNames, true ) ) {
-                    continue;
-                }
-
-                $downloads[] = [
-                    "name" => $file,
-                    "file" => sprintf('%s/%s', $baseUrl, $file)
-                ];
-            }
-
-            $request->set_param( 'downloadable', true );
-            $request->set_param( 'downloads', $downloads );
-        }
+		if (!file_exists($imagePath)) {
+			$this->log( 'debug', sprintf('File %s does not exist', $imagePath));
+			return false;
+		}
+		return true;
 	}
 
-	private function fileAlreadyExists($file, $currentFiles)
+    private function deleteProductAttachments($ids):void
     {
-		$tmpFile = sanitize_file_name($file);
-        foreach ($currentFiles as $currentFile) {
-            if (strpos($currentFile, $tmpFile) === 0)
-            {
-                return true;
+        if (is_numeric($ids)) {
+            $ids = [$ids];
+        }
+
+        if (!is_array($ids)) {
+            return;
+        }
+
+        foreach ($ids as $id) {
+			if ($id instanceof WP_Post) {
+				$id = $id->ID;
+			}
+
+			$file = get_attached_file($id);
+
+            if (wp_delete_attachment($id, true)) {
+                $this->log( 'debug', sprintf('Attachment %s (%s) has been deleted',$file, $id));
+            } else {
+                $this->log( 'debug', sprintf('Unable to delete attachment %s (%s)',$file, $id));
             }
         }
-        return false;
     }
 
-	private function processFiles( $files, $location )
-	{
-		$setAsProductImage = false;
-        /**
-         *
-         * Compatibility fix. Single product images are associative arrays while
-         * documents are multidimensional arrays
-         *
-         * */
-        $first = reset($files);
-        if ($first && !is_array($first)) {
-            $setAsProductImage = true;
-            $files = [$files];
+    private function findAttachtmentById($id)
+    {
+        if (!$id) {
+            return null;
         }
 
-        $savedFiles = [
-            'productImage' => null,
-            'images'       => [],
-            'downloads'    => [],
+		$args = array(
+		    'post_type'      => ['attachment'],
+		    'post_status'    => ['inherit'],
+		    'fields'         => 'ids',
+		    'posts_per_page' => 1,
+		    'meta_query'  => [
+		        [
+		            'key'     => 'xcore_document_attachment_id',
+		            'value'   => $id,
+		            'compare' => '='
+		        ]
+		    ]
+		);
+
+		$result = (new WP_Query($args))->get_posts();
+
+		if (!$result || is_wp_error($result)) {
+			return null;
+		}
+		return is_array($result) ? reset($result) : null;
+    }
+
+    private function getAllProductImageAttachments($product)
+    {
+        if (!$product) {
+            return [];
+        }
+
+        $productAttachments = [];
+
+        if ($product->get_image_id()) {
+            $productAttachments[] = $product->get_image_id();
+        }
+
+		$productAttachments = array_merge($productAttachments, $product->get_gallery_image_ids());
+		$attachmentFiles    = [];
+		foreach ($productAttachments as $attachmentId) {
+			$imageAttachment = wp_get_attachment_image_src($attachmentId, 'full');
+
+			if (!$imageAttachment) {
+				continue;
+			}
+
+			$fileBasename                   = strtolower(basename(current($imageAttachment)));
+
+			if (isset($attachmentFiles[$fileBasename])) {
+				/*
+				 * Do not add images that belong to the same attachment
+				 */
+				if ($attachmentFiles[$fileBasename] === $attachmentId) {
+					continue;
+				}
+
+				$documentIdA = $this->getDocumentAttachmentId($attachmentFiles[$fileBasename]);
+				$documentIdB = $this->getDocumentAttachmentId($attachmentId);
+
+				if (($documentIdA && $documentIdB) && $documentIdA === $documentIdB) {
+					$this->log( 'debug', sprintf('Duplicate gallery image found, deleting duplicate image %s ',$attachmentId));
+					$this->deleteProductAttachments($attachmentId);
+					continue;
+				}
+			}
+			$attachmentFiles[$fileBasename] = $attachmentId;
+		}
+
+	    return array_unique($attachmentFiles);
+    }
+
+    private function saveFileAsAttachment($file, $productId)
+    {
+		$fileName   = $file['original_filename'];
+		$endpoint   = '/wp/v2/media';
+		$attributes = ['sslverify' => false];
+        $headers    = [
+            'Content-Disposition' => 'form-data; filename='.$fileName,
+            'Content-Type'        => $file['mime_type']
         ];
 
-        foreach ( $files as $file ) {
-            $extension = $file['file_extension'];
+        $wpRequest = new WP_REST_Request('POST', $endpoint, $attributes);
+		$body      = $file['media_data_base64_encoded'];
 
-            if ( ! isset( $file['original_filename'] ) ) {
-                $fileName = sprintf( 'tmp_xcore_%s.%s', $file['formatted_sku'], $extension );
-            } else {
-                $fileName = $file['original_filename'];
-            }
+		$wpRequest->set_body(base64_decode($body));
+		$wpRequest->set_headers( $headers);
+		$wpRequest->set_param( 'title', $fileName);
 
-            $filePath = sprintf( '%s/%s', $location, $fileName );
-            $fileData = base64_decode( $file['media_data_base64_encoded'] );
+		if ($productId) {
+			$wpRequest->set_param( 'post', $productId);
+		}
 
-            if ( file_put_contents( $filePath, $fileData ) === false ) {
-                continue;
-            }
+		$response = rest_do_request($wpRequest);
 
-            if (isset( $file['set_as_product_image'] )) {
-                $setAsProductImage = (bool) $file['set_as_product_image'];
-            }
+		if ($response instanceof WP_Error) {
+			$this->log( 'error', sprintf('%s (%s)', $response->get_error_message(), $response->get_error_code()));
+			return null;
+		}
 
+		if ($response->get_status() !== 201) {
+			$error = $response->as_error();
+			$msg   = $error ? $error->get_error_message() : 'Something went wrong';
+			$this->log( 'debug', sprintf('Attachment not created: %s (Response code: %s)', $msg, $response->get_status()));
+			return null;
+		}
 
-            if (wp_getimagesize($filePath) !== false) {
-                if ($setAsProductImage) {
-                    $savedFiles['productImage'] = $fileName;
-                } else {
-                    $savedFiles['images'][] = $fileName;
-                }
-            } else {
-                $savedFiles['downloads'][] = $fileName;
-            }
-        }
-        return $savedFiles;
-	}
+		$attachmentId = $response->get_data()['id'];
+		$sourceId     = $file['attachment_source_id'] ?? null;
 
-	private function processMedia( $request ) {
-        if (!isset($request['xcore_media'])) {
-            return false;
-        }
+		if ($sourceId && !update_post_meta( $attachmentId, 'xcore_document_attachment_id', $sourceId)) {
+			$this->log( 'debug', sprintf('Unable to set source id (%s), deleting attachment  %s (%s).', $sourceId, $fileName, $attachmentId));
 
-        $dirs = wp_get_upload_dir();
-        $file = $this->upload_item_media($request['xcore_media'], $dirs['basedir']);
+			$this->deleteProductAttachments($attachmentId);
+			return null;
+		}
 
-        if ($file) {
-            return $dirs['baseurl'] . "/" . $file;
-        }
+		$this->log( 'debug', sprintf('Attachment %s (%s) created', $fileName, $attachmentId));
 
-        return false;
+		$data = $response->get_data();
+		return $data['id'] ?? null;
     }
 
     private function updateStock($request, $product)
@@ -756,36 +978,22 @@ class Xcore_Products extends WC_REST_Products_Controller
 		return new WP_REST_Response( $request['stock_quantity'], 200 );
 	}
 
-	private function attachFile( $request, $file, $product = null ) {
-		$images    = $product ? $this->get_images( $product ) : [];
-		$images[0] = [ "src" => $file ];
+    private function log($level, $logMsg)
+    {
+        $source = ['source' => 'xcore-rest-api'];
+        $logger = wc_get_logger();
 
-		$request->set_param( 'images', $images );
+		if (is_array($logMsg) || is_object( $logMsg)) {
+			$logMsg = print_r($logMsg, true);
+		}
 
-		return $request;
+        if ($logger) {
+            $logger->log($level, $logMsg, $source);
+        }
     }
 
-    private function cleanUp($files, $baseDir)
+    private function getDocumentAttachmentId($attachmentId)
     {
-        if (isset($files['productImage'])) {
-            $file = $files['productImage'];
-
-            if (!is_string($file)) {
-                wp_die($file);
-            }
-            unlink( sprintf('%s/%s', $baseDir, $files['productImage']) );
-        }
-
-        if (isset($files['images']) && $files['images']) {
-            foreach ($files['images'] as $image) {
-                unlink( sprintf('%s/%s', $baseDir, $image));
-            }
-        }
-
-        if (isset($files['downloads']) && $files['downloads']) {
-            foreach ($files['downloads'] as $file) {
-                unlink(sprintf('%s/%s', $baseDir, $file));
-            }
-        }
+        return get_post_meta($attachmentId, 'xcore_document_attachment_id', true);
     }
 }
