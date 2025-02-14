@@ -637,7 +637,7 @@ class Xcore_Products extends WC_REST_Products_Controller
 			}
 
 			$imagePost = get_post($wpAttachmentId);
-			if ($imagePost->post_name === $filename) {
+			if ($imagePost->post_name !== $filename) {
 				$this->log( 'debug', sprintf('Filename changed after upload, deleting %s', $filename));
 				$this->deleteProductAttachments($wpAttachmentId);
 				continue;
