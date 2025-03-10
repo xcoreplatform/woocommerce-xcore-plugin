@@ -3,7 +3,7 @@
 defined( 'ABSPATH' ) || exit;
 
 class Xcore {
-	private $_version            = '1.14.0';
+	private $_version            = '1.14.2';
 	private static $_instance    = null;
     private        $_xcoreHelper = null;
 
@@ -264,6 +264,7 @@ class Xcore {
 		include_once __DIR__ . '/class-xcore-payment-methods.php';
 		include_once __DIR__ . '/class-xcore-tax-classes.php';
 		include_once __DIR__ . '/class-xcore-documents.php';
+		include_once __DIR__ . '/class-xcore-custom-types.php';
 	}
 
 	/**
@@ -284,6 +285,7 @@ class Xcore {
 			'Xcore_Payment_Methods',
 			'Xcore_Tax_Classes',
 			'Xcore_Documents',
+			'Xcore_Custom_Types',
 		];
 
 		foreach ( $classes as $class ) {

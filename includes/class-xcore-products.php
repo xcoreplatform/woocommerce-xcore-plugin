@@ -513,19 +513,21 @@ class Xcore_Products extends WC_REST_Products_Controller
 			return $this->processFile($file, $product);
 		}
 
-		$imageId   = $product->get_image_id();
-		$imagePost = get_post($imageId);
-		if ($imagePost->post_name === $filename) {
-			$this->log( 'debug', sprintf('Found existing image %s on product, deleting before proceeding.', $filename));
+		$imageId           = $product->get_image_id();
+		$imagePost         = get_post($imageId);
+
+		if (!$imagePost) {
+			return $this->processFile($file, $product);
+		}
+
+		$sanitizedFilename = sanitize_title($filename);
+
+		if ($imagePost->post_name === $sanitizedFilename) {
+			$this->log( 'debug', sprintf('Product has a featured image with the same name (%s), deleting before proceeding.', $imagePost->post_name));
 			$this->deleteProductAttachments($imageId);
 		}
 
 		return $this->processFile($file, $product);
-	}
-
-	private function processGalleryImage($file, $product)
-	{
-
 	}
 
 	/*
@@ -636,9 +638,10 @@ class Xcore_Products extends WC_REST_Products_Controller
 				$wpAttachmentId = $this->processFile($file, $product);
 			}
 
-			$imagePost = get_post($wpAttachmentId);
-			if ($imagePost->post_name !== $filename) {
-				$this->log( 'debug', sprintf('Filename changed after upload, deleting %s', $filename));
+			$imagePost         = get_post($wpAttachmentId);
+			$sanitizedFilename = sanitize_title($filename);
+			if ($imagePost->post_name !== $sanitizedFilename) {
+				$this->log( 'debug', sprintf('Filename %s changed to %s after upload, deleting %s', $sanitizedFilename, $imagePost->post_name, $sanitizedFilename));
 				$this->deleteProductAttachments($wpAttachmentId);
 				continue;
 			}

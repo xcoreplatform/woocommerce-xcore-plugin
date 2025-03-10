@@ -2,17 +2,17 @@
 
 include_once(ABSPATH . 'wp-admin/includes/plugin.php');
 /*
-   Plugin Name: xCore Rest API extension
+   Plugin Name: Xcore Rest API extension
    Plugin URI: https://xcore.nl/
-   description: This plugin adds additional functionality to the Woocommerce Rest API to support the features provided by our xCore platform.
-   @Version: 1.14.0
-   @Author: Dealer4Dealer
+   description: This plugin adds additional functionality to the Woocommerce Rest API to support the features provided by our Xcore platform.
+   @Version: 1.14.2
+   @Author: Xcore
    Author URI: https://xcore.nl/
-   Requires at least: 5.3.0
-   Tested up to: 6.2.2
+   Requires at least: 6.3.0
+   Tested up to: 6.7.2
    License: GPL2
-   WC requires at least: 5.8.0
-   WC tested up to: 7.7.2
+   WC requires at least: 7.5.0
+   WC tested up to: 9.7.1
    */
 
 if (!defined('ABSPATH')) {
