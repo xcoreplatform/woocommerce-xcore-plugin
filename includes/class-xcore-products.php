@@ -886,13 +886,17 @@ class Xcore_Products extends WC_REST_Products_Controller
 		$productAttachments = array_merge($productAttachments, $product->get_gallery_image_ids());
 		$attachmentFiles    = [];
 		foreach ($productAttachments as $attachmentId) {
+			if (!$this->checkAttachmentFileExistence($attachmentId)) {
+				continue;
+			}
+
 			$imageAttachment = wp_get_attachment_image_src($attachmentId, 'full');
 
 			if (!$imageAttachment) {
 				continue;
 			}
 
-			$fileBasename                   = strtolower(basename(current($imageAttachment)));
+			$fileBasename = strtolower(basename(current($imageAttachment)));
 
 			if (isset($attachmentFiles[$fileBasename])) {
 				/*
