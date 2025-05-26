@@ -1,9 +1,9 @@
 <?php
 
 defined( 'ABSPATH' ) || exit;
-
+#[AllowDynamicProperties]
 class Xcore {
-	private $_version            = '1.14.5';
+	private        $_version     = '1.14.6';
 	private static $_instance    = null;
     private        $_xcoreHelper = null;
 
