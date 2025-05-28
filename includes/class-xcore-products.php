@@ -507,23 +507,21 @@ class Xcore_Products extends WC_REST_Products_Controller
 
 	private function processFeaturedImage($file, $product)
 	{
-		$filename = $file['original_filename'];
-
-		if (!$product || !$product instanceof WC_Product) {
+		if (!$product instanceof WC_Product) {
 			return $this->processFile($file, $product);
 		}
 
-		$imageId           = $product->get_image_id();
-		$imagePost         = get_post($imageId);
+		$imageId   = $product->get_image_id();
+		$imagePost = get_post($imageId);
 
 		if (!$imagePost) {
 			return $this->processFile($file, $product);
 		}
 
-		$sanitizedFilename = sanitize_title($filename);
-
-		if ($imagePost->post_name === $sanitizedFilename) {
-			$this->log( 'debug', sprintf('Product has a featured image with the same name (%s), deleting before proceeding.', $imagePost->post_name));
+		$sanitizedFilename = $this->getSanitizedFileName($file['original_filename']);
+		$imagePostFilename = $this->getFileNameFromPost($imagePost);
+		if ($imagePostFilename && ($imagePostFilename === $sanitizedFilename)) {
+			$this->log( 'debug', sprintf('Product has a featured image with the same name (%s), deleting before proceeding.', $imagePostFilename));
 			$this->deleteProductAttachments($imageId);
 		}
 
@@ -612,15 +610,14 @@ class Xcore_Products extends WC_REST_Products_Controller
 		$fileContainer->productDownloads = [];
 		foreach ($files as $file) {
 			$setAsProductImage    = $file['set_as_product_image'] ?? null;
-			$filename             = sprintf('%s.%s', $file['original_filename'], $file['file_extension']);
-			$sanitizedFilename    = sprintf('%s.%s', sanitize_title($file['original_filename']), $file['file_extension']);
-			$existingGalleryImage = $currentImages[strtolower($sanitizedFilename)] ?? null;
+			$filename             = $this->getSanitizedFileName($file['original_filename']);
+			$existingGalleryImage = $currentImages[$filename] ?? null;
 			$orphanPost           = $this->findOrphansByFilename($filename);
 
 			if ($existingGalleryImage) {
-				$this->log( 'debug', sprintf('Found existing image %s on product, deleting before proceeding.', $sanitizedFilename));
+				$this->log( 'debug', sprintf('Found existing image %s on product, deleting before proceeding.', $filename));
 				$this->deleteProductAttachments($existingGalleryImage);
-				unset($currentImages[strtolower($sanitizedFilename)]);
+				unset($currentImages[$filename]);
 			} elseif ($orphanPost && isset($orphanPost->ID)) {
 					$this->deleteProductAttachments($orphanPost->ID);
 			}
@@ -632,15 +629,15 @@ class Xcore_Products extends WC_REST_Products_Controller
 			}
 
 			$imagePost     = get_post($wpAttachmentId);
-			$imagePostFile = strtolower(basename($imagePost->guid));
-			if ($imagePostFile !== $sanitizedFilename) {
-				$this->log( 'debug', sprintf('Filename %s changed to %s after upload, deleting %s', $sanitizedFilename, $imagePostFile, $imagePostFile));
+			$imagePostFile = $this->getFileNameFromPost($imagePost);
+			if ($imagePostFile !== $filename) {
+				$this->log( 'debug', sprintf('Filename %s changed to %s after upload, deleting %s', $filename, $imagePostFile, $imagePostFile));
 				$this->deleteProductAttachments($wpAttachmentId);
 				continue;
 			}
 
 			if (!$this->isValidAttachmentId($wpAttachmentId)) {
-				$this->log( 'debug', sprintf('Invalid attachment %s, skipping.', $sanitizedFilename));
+				$this->log( 'debug', sprintf('Invalid attachment %s, skipping.', $filename));
 				continue;
 			}
 
@@ -651,6 +648,14 @@ class Xcore_Products extends WC_REST_Products_Controller
 
 			if ($setAsProductImage) {
 				$fileContainer->featuredImage = $wpAttachmentId;
+				$currentImageId               = $product->get_image_id();
+
+				foreach ($currentImages as $key => $imageId) {
+					if ($currentImageId === $imageId) {
+						unset($currentImages[$key]);
+						$this->deleteProductAttachments($imageId);
+					}
+				}
 			} else {
 				$fileContainer->productImages[] = $wpAttachmentId;
 			}
@@ -698,7 +703,7 @@ class Xcore_Products extends WC_REST_Products_Controller
 			$this->log( 'debug', sprintf('Existing file %s (%s) found', $file, $attachmentId));
 			return $attachmentId;
 		}
-//		$this->log( 'error', $file);
+
         return $this->saveFileAsAttachment($file, $product ? $product->get_id() : null);
     }
 
@@ -887,8 +892,8 @@ class Xcore_Products extends WC_REST_Products_Controller
 				continue;
 			}
 
-			$fileBasename = strtolower(basename(current($imageAttachment)));
-
+			$imageSrc     = current($imageAttachment);
+			$fileBasename = $this->getSanitizedFileName(basename($imageSrc), true);
 			if (isset($attachmentFiles[$fileBasename])) {
 				/*
 				 * Do not add images that belong to the same attachment
@@ -912,9 +917,26 @@ class Xcore_Products extends WC_REST_Products_Controller
 	    return array_unique($attachmentFiles);
     }
 
+    private function getSanitizedFileName($file): string
+    {
+	    return sanitize_file_name(strtolower($file));
+    }
+
+    private function getFileNameFromPost(WP_Post $post)
+    {
+        $file = isset($post->guid) ? basename($post->guid) : $post->post_title;
+        return $this->getSanitizedFileName($file);
+    }
+
     private function saveFileAsAttachment($file, $productId)
     {
-		$fileName   = sprintf('%s.%s', $file['original_filename'], $file['file_extension']);
+		$fileName = $file['original_filename'];
+
+		if (empty($this->getSanitizedFileName($fileName))) {
+			$this->log( 'error', sprintf('Invalid filename %s, not processing', $fileName));
+			return null;
+		}
+
 		$endpoint   = '/wp/v2/media';
 		$attributes = ['sslverify' => false];
         $headers    = [

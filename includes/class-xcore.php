@@ -3,7 +3,7 @@
 defined( 'ABSPATH' ) || exit;
 #[AllowDynamicProperties]
 class Xcore {
-	private        $_version     = '1.14.6';
+	private        $_version     = '1.14.7';
 	private static $_instance    = null;
     private        $_xcoreHelper = null;
 
@@ -265,6 +265,7 @@ class Xcore {
 		include_once __DIR__ . '/class-xcore-tax-classes.php';
 		include_once __DIR__ . '/class-xcore-documents.php';
 		include_once __DIR__ . '/class-xcore-custom-types.php';
+		include_once __DIR__ . '/Compatibility/class-xcore-compatibility.php';
 	}
 
 	/**
@@ -286,10 +287,15 @@ class Xcore {
 			'Xcore_Tax_Classes',
 			'Xcore_Documents',
 			'Xcore_Custom_Types',
+			'Xcore_Compatibility',
 		];
 
 		foreach ( $classes as $class ) {
-			$this->$class = new $class( $this->_xcoreHelper );
+			if ($class === 'Xcore_Compatibility') {
+				$this->$class = new $class();
+			} else {
+				$this->$class = new $class($this->_xcoreHelper);
+			}
 		}
 	}
 
