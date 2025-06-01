@@ -156,7 +156,8 @@ class Xcore_Products extends WC_REST_Products_Controller
         return parent::batch_items($request);
     }
 
-	public function create_item( $request ) {
+	public function create_item($request)
+	{
 		if ( $request->get_param( 'type' ) == 'variation' && ! $request->get_param( 'parent_id' ) ) {
 			return new WP_Error( 'woocommerce_rest_missing_variation_data',
 				__( 'Missing parent ID.', 'woocommerce' ),
@@ -630,7 +631,7 @@ class Xcore_Products extends WC_REST_Products_Controller
 
 			$imagePost     = get_post($wpAttachmentId);
 			$imagePostFile = $this->getFileNameFromPost($imagePost);
-			if ($imagePostFile !== $filename) {
+			if ($imagePostFile && ($imagePostFile !== $filename)) {
 				$this->log( 'debug', sprintf('Filename %s changed to %s after upload, deleting %s', $filename, $imagePostFile, $imagePostFile));
 				$this->deleteProductAttachments($wpAttachmentId);
 				continue;
@@ -922,10 +923,14 @@ class Xcore_Products extends WC_REST_Products_Controller
 	    return sanitize_file_name(strtolower($file));
     }
 
-    private function getFileNameFromPost(WP_Post $post)
+    private function getFileNameFromPost($post)
     {
-        $file = isset($post->guid) ? basename($post->guid) : $post->post_title;
-        return $this->getSanitizedFileName($file);
+        if (!$post instanceof WP_Post ) {
+            return null;
+        }
+
+	    $file = isset($post->guid) ? basename($post->guid) : $post->post_title;
+	    return $this->getSanitizedFileName($file);
     }
 
     private function saveFileAsAttachment($file, $productId)
