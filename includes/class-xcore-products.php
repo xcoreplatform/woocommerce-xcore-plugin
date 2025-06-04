@@ -649,8 +649,12 @@ class Xcore_Products extends WC_REST_Products_Controller
 
 			if ($setAsProductImage) {
 				$fileContainer->featuredImage = $wpAttachmentId;
-				$currentImageId               = $product->get_image_id();
 
+				if (!$product) {
+		                    continue;
+		                }
+				
+				$currentImageId = $product->get_image_id();
 				foreach ($currentImages as $key => $imageId) {
 					if ($currentImageId === $imageId) {
 						unset($currentImages[$key]);
