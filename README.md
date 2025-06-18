@@ -2,7 +2,7 @@
 Tags: woocommerce, connect, exact, exact online, xcore, d4d, dealer4dealer
 Requires at least: 6.3.0
 Tested up to: 6.7.2
-Stable tag: 1.14.8
+Stable tag: 1.14.9
 License: The MIT License (MIT)
 
 This module extends the api of Woocommerce and is needed for the usage of the Xcore. For more information or support see https://xcore.nl.
