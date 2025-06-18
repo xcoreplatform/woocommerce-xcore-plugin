@@ -107,6 +107,12 @@ class Xcore_Custom_Types
             return $hasPermission;
         }
 
+        $perPage = $request->get_param('per_page');
+
+        if (is_numeric($perPage) && $perPage > 1) {
+            return $controller->get_items($request);
+        }
+
 		$key   = $request->get_param('meta_key');
 		$value = $request->get_param('meta_value');
 
@@ -123,6 +129,14 @@ class Xcore_Custom_Types
 		    ]
 		);
 
+		if ($postType === 'attachment') {
+			$args['post_status'] = ['inherit'];
+		}
+
+		if ($request->get_param('exact_match') === false || $request->get_param('exact_match') === 0) {
+			$args['meta_query'][0]['compare'] = 'LIKE';
+		}
+
 		$posts  = (new WP_Query($args))->get_posts();
 		$postId = is_array($posts) ? reset($posts) : $posts;
 		if (!$postId || is_wp_error($postId)) {
@@ -130,7 +144,6 @@ class Xcore_Custom_Types
 		}
 
 		$request->set_param('id', $postId);
-
 
         return $controller->get_item($request);
 	}

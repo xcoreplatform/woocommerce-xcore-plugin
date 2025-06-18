@@ -613,10 +613,10 @@ class Xcore_Products extends WC_REST_Products_Controller
 			$setAsProductImage    = $file['set_as_product_image'] ?? null;
 			$filename             = $this->getSanitizedFileName($file['original_filename']);
 			$existingGalleryImage = $currentImages[$filename] ?? null;
-			$orphanPost           = $this->findOrphansByFilename($filename);
+			$orphanPost           = $this->findOrphansByFilename($file['original_filename']);
 
 			if ($existingGalleryImage) {
-				$this->log( 'debug', sprintf('Found existing image %s on product, deleting before proceeding.', $filename));
+				$this->log('debug', sprintf('Found existing image %s on product, deleting before proceeding.', $filename));
 				$this->deleteProductAttachments($existingGalleryImage);
 				unset($currentImages[$filename]);
 			} elseif ($orphanPost && isset($orphanPost->ID)) {
@@ -631,7 +631,7 @@ class Xcore_Products extends WC_REST_Products_Controller
 
 			$imagePost     = get_post($wpAttachmentId);
 			$imagePostFile = $this->getFileNameFromPost($imagePost);
-			if ($imagePostFile && ($imagePostFile !== $filename)) {
+			if ($imagePostFile && (strtolower($imagePostFile) !== strtolower($filename))) {
 				$this->log( 'debug', sprintf('Filename %s changed to %s after upload, deleting %s', $filename, $imagePostFile, $imagePostFile));
 				$this->deleteProductAttachments($wpAttachmentId);
 				continue;
@@ -650,11 +650,12 @@ class Xcore_Products extends WC_REST_Products_Controller
 			if ($setAsProductImage) {
 				$fileContainer->featuredImage = $wpAttachmentId;
 
-				if (!$product) {
-		                    continue;
-		                }
-				
+                if (!$product) {
+                    continue;
+                }
+
 				$currentImageId = $product->get_image_id();
+
 				foreach ($currentImages as $key => $imageId) {
 					if ($currentImageId === $imageId) {
 						unset($currentImages[$key]);
@@ -745,6 +746,12 @@ class Xcore_Products extends WC_REST_Products_Controller
 		return $schema;
 	}
 
+	public function includeFileNameSearch($query)
+	{
+		add_filter('wp_allow_query_attachment_by_filename', '__return_true', 999);
+		return $query;
+	}
+
 	private function hasDuplicateFileName($fileName)
 	{
 		$imageId = $this->getProductImageIdByFileName($fileName);
@@ -758,18 +765,29 @@ class Xcore_Products extends WC_REST_Products_Controller
 
 	private function findOrphansByFilename($filename)
 	{
+		add_filter( 'pre_get_posts', [$this, 'includeFileNameSearch'], 999);
+
 		$args = [
-				'post_type'   => ['attachment'],
-				'post_status' => ['inherit'],
-				's'           =>  $filename,
-				'orderby'     => 'date',
-				'order'       => 'asc',
-			];
+                'post_type'       => 'attachment',
+                'post_status'     => ['inherit'],
+                'post_title'      => $filename,
+                's'               => $this->getSanitizedFileName($filename),
+                'posts_per_page'  => -1,
+                'post_mime_types' => get_allowed_mime_types(),
+                'orderby'         => 'date',
+                'order'           => 'asc',
+            ];
+
 		$result = (new WP_Query($args))->get_posts();
+
+		remove_filter( 'pre_get_posts', [$this, 'includeFileNameSearch']);
 
 		if (!$result || is_wp_error($result)) {
 			return null;
 		}
+
+		$this->log( 'debug', sprintf('Found %s orphans for file %s', count($result), $filename));
+
 		return reset($result);
 	}
 
@@ -924,7 +942,7 @@ class Xcore_Products extends WC_REST_Products_Controller
 
     private function getSanitizedFileName($file): string
     {
-	    return sanitize_file_name(strtolower($file));
+	    return sanitize_file_name($file);
     }
 
     private function getFileNameFromPost($post)
