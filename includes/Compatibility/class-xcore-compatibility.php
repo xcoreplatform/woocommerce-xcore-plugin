@@ -7,6 +7,7 @@ class Xcore_Compatibility
 {
 	private static $supportedPlugins = [
 		'/class-xcore-compatibility-acf.php',
+//		'/class-xcore-compatibility-wdp.php',
 	];
 
 	public function __construct()

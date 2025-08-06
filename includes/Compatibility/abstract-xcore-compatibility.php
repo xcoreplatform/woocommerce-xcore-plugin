@@ -6,6 +6,16 @@ abstract class Abstract_Xcore_Compatibility
 {
 	private ?WC_Logger_Interface $logger = null;
 
+	protected function isActive($plugins)
+	{
+		foreach ($plugins as $plugin) {
+			if (is_plugin_active( $plugin)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	protected function log($level, $logMsg)
     {
         if (is_null($this->logger)) {
