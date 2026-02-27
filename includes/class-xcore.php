@@ -3,7 +3,7 @@
 defined( 'ABSPATH' ) || exit;
 #[AllowDynamicProperties]
 class Xcore {
-	private        $_version     = '1.14.9';
+	private        $_version     = '1.15.0';
 	private static $_instance    = null;
     private        $_xcoreHelper = null;
 
@@ -259,6 +259,7 @@ class Xcore {
 		include_once __DIR__ . '/class-xcore-product-categories.php';
 		include_once __DIR__ . '/class-xcore-customers.php';
 		include_once __DIR__ . '/class-xcore-orders.php';
+		include_once __DIR__ . '/class-xcore-order-notes.php';
 		include_once __DIR__ . '/class-xcore-refunds.php';
 		include_once __DIR__ . '/class-xcore-shipping-methods.php';
 		include_once __DIR__ . '/class-xcore-payment-methods.php';
@@ -281,6 +282,7 @@ class Xcore {
 			'Xcore_Product_Categories',
 			'Xcore_Customers',
 			'Xcore_Orders',
+			'Xcore_Order_Notes',
 			'Xcore_Refunds',
 			'Xcore_Shipping_Methods',
 			'Xcore_Payment_Methods',
