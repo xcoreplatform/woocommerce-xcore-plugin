@@ -508,24 +508,6 @@ class Xcore_Products extends WC_REST_Products_Controller
 
 	private function processFeaturedImage($file, $product)
 	{
-		if (!$product instanceof WC_Product) {
-			return $this->processFile($file, $product);
-		}
-
-		$imageId   = $product->get_image_id();
-		$imagePost = get_post($imageId);
-
-		if (!$imagePost) {
-			return $this->processFile($file, $product);
-		}
-
-		$sanitizedFilename = $this->getSanitizedFileName($file['original_filename']);
-		$imagePostFilename = $this->getFileNameFromPost($imagePost);
-		if ($imagePostFilename && ($imagePostFilename === $sanitizedFilename)) {
-			$this->log( 'debug', sprintf('Product has a featured image with the same name (%s), deleting before proceeding.', $imagePostFilename));
-			$this->deleteProductAttachments($imageId);
-		}
-
 		return $this->processFile($file, $product);
 	}
 
@@ -615,22 +597,43 @@ class Xcore_Products extends WC_REST_Products_Controller
 			$existingGalleryImage = $currentImages[$filename] ?? null;
 			$orphanPost           = $this->findOrphansByFilename($file['original_filename']);
 
-			if ($existingGalleryImage) {
-				$this->log('debug', sprintf('Found existing image %s on product, deleting before proceeding.', $filename));
-				$this->deleteProductAttachments($existingGalleryImage);
-				unset($currentImages[$filename]);
-			} elseif ($orphanPost && isset($orphanPost->ID)) {
-					$this->deleteProductAttachments($orphanPost->ID);
-			}
-
 			if ($setAsProductImage) {
 				$wpAttachmentId = $this->processFeaturedImage($file, $product);
-			} else {
-				$wpAttachmentId = $this->processFile($file, $product);
+
+				$fileContainer->featuredImage = $wpAttachmentId;
+
+				if (!$product) {
+					continue;
+				}
+
+				$currentImageId = $product->get_image_id();
+
+				foreach ($currentImages as $key => $imageId) {
+					if ($currentImageId === $imageId) {
+						unset($currentImages[$key]);
+						$this->deleteProductAttachments($imageId);
+					}
+				}
+
+				// Skipping the orphan/duplicate image check for featured images
+				continue;
 			}
 
-			$imagePost     = get_post($wpAttachmentId);
-			$imagePostFile = $this->getFileNameFromPost($imagePost);
+			if ($existingGalleryImage) {
+				if (isset($fileContainer->featuredImage) && $existingGalleryImage !== $fileContainer->featuredImage) {
+					$this->log('debug', sprintf('Found existing image %s on product, deleting before proceeding.', $filename));
+					$this->deleteProductAttachments($existingGalleryImage);
+					unset($currentImages[$filename]);
+				}
+			} elseif ($orphanPost && isset($orphanPost->ID)) {
+				if (isset($fileContainer->featuredImage) && $orphanPost->ID !== $fileContainer->featuredImage) {
+					$this->deleteProductAttachments($orphanPost->ID);
+				}
+			}
+
+			$wpAttachmentId = $this->processFile($file, $product);
+			$imagePost      = get_post($wpAttachmentId);
+			$imagePostFile  = $this->getFileNameFromPost($imagePost);
 			if ($imagePostFile && (strtolower($imagePostFile) !== strtolower($filename))) {
 				$this->log( 'debug', sprintf('Filename %s changed to %s after upload, deleting %s', $filename, $imagePostFile, $imagePostFile));
 				$this->deleteProductAttachments($wpAttachmentId);
@@ -647,30 +650,14 @@ class Xcore_Products extends WC_REST_Products_Controller
 				continue;
 			}
 
-			if ($setAsProductImage) {
-				$fileContainer->featuredImage = $wpAttachmentId;
-
-                if (!$product) {
-                    continue;
-                }
-
-				$currentImageId = $product->get_image_id();
-
-				foreach ($currentImages as $key => $imageId) {
-					if ($currentImageId === $imageId) {
-						unset($currentImages[$key]);
-						$this->deleteProductAttachments($imageId);
-					}
-				}
-			} else {
-				$fileContainer->productImages[] = $wpAttachmentId;
-			}
+			$fileContainer->productImages[] = $wpAttachmentId;
 		}
 
 		$fileContainer->productImages = array_unique(array_merge($fileContainer->productImages, array_values($currentImages)));
 
 		return $fileContainer;
 	}
+
 	private function checkAttachmentFileExistence($attachmentId)
 	{
 		if (!$attachmentId) {
