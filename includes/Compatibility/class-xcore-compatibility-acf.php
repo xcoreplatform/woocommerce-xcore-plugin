@@ -20,21 +20,11 @@ class Xcore_Compatibility_ACF extends Abstract_Xcore_Compatibility
 
 	public function init()
 	{
-		if (!$this->isActive()) {
+		if (!$this->isActive(self::$pluginName)) {
 			return;
 		}
 
 		$this->addHooks();
-	}
-
-	private function isActive(): bool
-	{
-		foreach (self::$pluginName as $plugin) {
-			if (is_plugin_active( $plugin)) {
-				return true;
-			}
-		}
-		return false;
 	}
 
 	private function addHooks()
