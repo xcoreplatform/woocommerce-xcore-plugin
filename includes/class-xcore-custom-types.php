@@ -140,7 +140,7 @@ class Xcore_Custom_Types
 		$posts  = (new WP_Query($args))->get_posts();
 		$postId = is_array($posts) ? reset($posts) : $posts;
 		if (!$postId || is_wp_error($postId)) {
-			return new WP_Error( 'rest_not_found', __( sprintf('%s not found', $postType), 'xcore' ), array( 'status' => 404 ) );
+			return new WP_Error( 'rest_not_found', sprintf( __( '%s not found', 'xcore' ), $postType ), array( 'status' => 404 ) );
 		}
 
 		$request->set_param('id', $postId);
