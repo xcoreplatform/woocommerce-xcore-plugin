@@ -160,7 +160,7 @@ class Xcore_Products extends WC_REST_Products_Controller
 	{
 		if ( $request->get_param( 'type' ) == 'variation' && ! $request->get_param( 'parent_id' ) ) {
 			return new WP_Error( 'woocommerce_rest_missing_variation_data',
-				__( 'Missing parent ID.', 'woocommerce' ),
+				__( 'Missing parent ID.', 'xcore' ),
 				400 );
 		}
 
@@ -260,7 +260,7 @@ class Xcore_Products extends WC_REST_Products_Controller
 
         if ($object->is_type('variation')) {
             if (!$object->get_parent_id()) {
-                return new WP_Error('woocommerce_rest_missing_variation_data', __('Missing parent ID.', 'woocommerce'), 400);
+                return new WP_Error('woocommerce_rest_missing_variation_data', __('Missing parent ID.', 'xcore'), 400);
             }
 
             $this->setCorrectVariationStatus($request);
@@ -371,14 +371,14 @@ class Xcore_Products extends WC_REST_Products_Controller
 
             // Validate ID
             if (empty($id)) {
-                throw new WC_REST_Exception('woocommerce_api_invalid_product_category_id', __('Invalid product category ID', 'woocommerce'), 400);
+                throw new WC_REST_Exception('woocommerce_api_invalid_product_category_id', __('Invalid product category ID', 'xcore'), 400);
             }
 
             // Permissions check
             if (!current_user_can('manage_product_terms')) {
                 throw new WC_REST_Exception(
                     'woocommerce_api_user_cannot_read_product_categories',
-                    __('You do not have permission to read product categories', 'woocommerce'),
+                    __('You do not have permission to read product categories', 'xcore'),
                     401
                 );
             }
@@ -388,7 +388,7 @@ class Xcore_Products extends WC_REST_Products_Controller
             if (is_wp_error($term) || is_null($term)) {
                 throw new WC_REST_Exception(
                     'woocommerce_api_invalid_product_category_id',
-                    __('A product category with the provided ID could not be found', 'woocommerce'),
+                    __('A product category with the provided ID could not be found', 'xcore'),
                     404
                 );
             }
@@ -575,7 +575,15 @@ class Xcore_Products extends WC_REST_Products_Controller
 		unset($request['xcore_media']);
 
 		if ($restApiImageIds) {
-			$request->set_param('images', $restApiImageIds);
+			if ($product && $product->get_type() === 'variation') {
+				$featureImage = array_shift($restApiImageIds);
+
+				if ($featureImage) {
+					$request->set_param('image', $featureImage);
+				}
+			} else {
+				$request->set_param('images', $restApiImageIds);
+			}
 		}
 
 		if ($restApiDownloadIds) {

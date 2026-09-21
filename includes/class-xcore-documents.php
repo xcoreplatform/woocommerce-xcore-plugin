@@ -47,7 +47,7 @@ class Xcore_Documents
             [
                 'methods'             => WP_REST_Server::READABLE,
                 'callback'            => [$this, 'get_item'],
-                'permission_callback' => '__return_true',
+                'permission_callback' => [$this, 'get_item_permissions_check'],
             ]
         );
 
@@ -57,7 +57,7 @@ class Xcore_Documents
             [
                 'methods'             => WP_REST_Server::CREATABLE,
                 'callback'            => [$this, 'create_item'],
-                'permission_callback' => '__return_true',
+                'permission_callback' => [$this, 'create_item_permissions_check'],
             ]
         );
 
@@ -67,7 +67,7 @@ class Xcore_Documents
             [
                 'methods'             => WP_REST_Server::EDITABLE,
                 'callback'            => [$this, 'update_item'],
-                'permission_callback' => '__return_true',
+                'permission_callback' => [$this, 'update_item_permissions_check'],
             ]
         );
     }
@@ -204,12 +204,14 @@ class Xcore_Documents
         $filenameSanitized = sanitize_file_name($filename);
         $date              = date("Y/m", strtotime($this->data['date_created']));
 
+	    add_filter( 'upload_mimes', [$this, 'allowedDocumentMimes']);
         add_filter('upload_dir', [$this, 'setCustomUploadPath']);
         $fileUpload                         = wp_upload_bits($filenameSanitized, null, $documentData, $date);
         $fileUpload['document_id']          = $this->data['document_id'];
         $fileUpload['document_description'] = $this->data['document_description'];
         $fileUpload['original_filename']    = $file['original_filename'];
         remove_filter('upload_dir', [$this, 'setCustomUploadPath']);
+	    remove_filter( 'upload_mimes', [$this, 'allowedDocumentMimes']);
 
         return $fileUpload;
     }
@@ -220,23 +222,103 @@ class Xcore_Documents
             return $dirs;
         }
 
-        $newBaseDir = $this->data['custom_upload_base_dir'];
-        $newSubDir  = $this->data['custom_upload_sub_dir'];
+		$customUploadDir = untrailingslashit($dirs['subdir']);
+	    $base            = WP_CONTENT_DIR . '/uploads';
 
-        if ($newBaseDir) {
-            $trimmedBaseDir  = trim($newBaseDir, '/');
-            $dirs['basedir'] = sprintf('%s/%s', dirname($dirs['basedir']), $trimmedBaseDir);
-            $dirs['baseurl'] = sprintf('%s/%s', dirname($dirs['baseurl']), $trimmedBaseDir);
-        }
+		if ($this->data['custom_upload_base_dir']) {
+			$newSubBase = ltrim($this->data['custom_upload_base_dir'], '/\\');
+			$path       = realpath(sprintf('%s%s', trailingslashit($base), trailingslashit($newSubBase)));
 
-        if ($newSubDir) {
-            $trimmedSubDir = trim($newSubDir, '/');
-            $dirs['path']  = sprintf('%s/%s', $dirs['basedir'], $trimmedSubDir);
-            $dirs['url']   = sprintf('%s/%s', $dirs['baseurl'], $trimmedSubDir);
-        }
+			if (!$path) {
+				$dirs['error'] = sprintf('Upload path %s does not exist, please manually create your custom directory %s', $path, $newSubBase);
+				return $dirs;
+			}
+
+			if (strpos($path, realpath($base)) !== 0) {
+				$dirs['error'] = 'Upload path is outside the base upload directory';
+				return $dirs;
+			}
+
+			$customUploadDir = $newSubBase . $customUploadDir;
+		}
+
+		if ($this->data['custom_upload_sub_dir']) {
+			$customUploadDir = trailingslashit($customUploadDir) . ltrim($this->data['custom_upload_sub_dir'], '/\\');
+		}
+
+		if (!$customUploadDir) {
+			return $dirs;
+		};
+
+		$newPath = sprintf('%s%s', trailingslashit($base), untrailingslashit($customUploadDir));
+
+		if (strpos($newPath, trailingslashit($base)) !== 0) {
+			$dirs['error'] = 'Upload path is outside the base upload directory';
+			return $dirs;
+		}
+
+		$dirs['path'] = $newPath;
+		$dirs['url']  = sprintf('%s%s', trailingslashit($dirs['baseurl']), untrailingslashit($customUploadDir));
 
         return $dirs;
     }
+
+	public function allowedDocumentMimes($mimes)
+	{
+		return $mimes;
+	}
+
+	public function create_item_permissions_check($request)
+	{
+		if (!current_user_can('upload_files')) {
+			return new WP_Error('woocommerce_rest_cannot_create',
+				__('Sorry, you are not allowed to create/add documents.', 'xcore'),
+				array('status' => rest_authorization_required_code())
+			);
+		}
+
+		$id = $request->get_param('order_id');
+
+		if (current_user_can('edit_shop_order', $id)) {
+			return true;
+		}
+
+		return false;
+	}
+
+	public function get_item_permissions_check($request)
+	{
+		$id    = $request->get_param('order_id');
+		$order = wc_get_order($id);
+
+		if (!$order) {
+			return false;
+		}
+
+		if (($order->get_user_id() === get_current_user_id()) || current_user_can('read_shop_order', $id)) {
+			return true;
+		}
+
+		return false;
+	}
+
+	public function update_item_permissions_check($request)
+	{
+		if (!current_user_can('upload_files')) {
+			return new WP_Error('woocommerce_rest_cannot_create',
+				__('Sorry, you are not allowed to add documents.', 'xcore'),
+				array('status' => rest_authorization_required_code())
+			);
+		}
+
+		$id = $request->get_param('id');
+
+		if (current_user_can('edit_shop_order', $id)) {
+			return true;
+		}
+
+		return false;
+	}
 
     private function attach_file($file)
     {
