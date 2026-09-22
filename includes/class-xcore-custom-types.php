@@ -29,7 +29,7 @@ class Xcore_Custom_Types
             [
                 'methods'             => WP_REST_Server::READABLE,
                 'callback'            => [$this, 'get_item'],
-                'permission_callback' => '__return_true',
+                'permission_callback' => [$this, 'get_item_permissions_check'],
             ]
         );
 
@@ -39,7 +39,7 @@ class Xcore_Custom_Types
             array(
                 'methods'             => WP_REST_Server::READABLE,
                 'callback'            => [$this, 'get_items'],
-                'permission_callback' => '__return_true',
+                'permission_callback' => [$this, 'get_items_permissions_check'],
             )
         );
 
@@ -49,7 +49,7 @@ class Xcore_Custom_Types
             [
                 'methods'             => WP_REST_Server::CREATABLE,
                 'callback'            => [$this, 'create_item'],
-                'permission_callback' => '__return_true',
+                'permission_callback' => [$this, 'create_item_permissions_check'],
             ]
         );
 
@@ -59,7 +59,7 @@ class Xcore_Custom_Types
             array(
                 'methods'             => WP_REST_Server::EDITABLE,
                 'callback'            => array($this, 'update_item'),
-                'permission_callback' => '__return_true',
+                'permission_callback' => [$this, 'update_item_permissions_check'],
             )
         );
 	}
@@ -74,12 +74,12 @@ class Xcore_Custom_Types
 
 		$request->set_param('post_type', $postType);
 
-		return (new WP_REST_Posts_Controller( $postType ) )->create_item($request);
+		return (new WP_REST_Posts_Controller($postType))->create_item($request);
 	}
 
 	public function get_item($request)
 	{
-		$postType   = $request->get_param('type');
+		$postType = $request->get_param('type');
 
 		if (!post_type_exists($postType)) {
 			return new WP_Error('rest_post_invalid_type', __('Invalid post type.'), ['status' => 400] );
@@ -93,7 +93,7 @@ class Xcore_Custom_Types
 
 	public function get_items(WP_REST_Request $request)
 	{
-		$postType   = $request->get_param('type');
+		$postType = $request->get_param('type');
 
 		if (!post_type_exists($postType)) {
 			return new WP_Error('rest_post_invalid_type', __('Invalid post type.'), ['status' => 400] );
@@ -161,11 +161,105 @@ class Xcore_Custom_Types
 		$request->set_param('id', $request['id']);
 		$controller = new WP_REST_Posts_Controller($postType);
 
+		$hasPermission = $controller->update_item_permissions_check($request);
+
+		if ($hasPermission !== true) {
+			return $hasPermission;
+		}
+
         return $controller->update_item($request);
 	}
 
-	protected function check_is_post_type_allowed($type)
+	public function get_item_permissions_check($request)
 	{
+		$postType = $request->get_param('type');
+		$postId   = $request->get_param('id');
+
+		if (!post_type_exists($postType)) {
+			return new WP_Error('rest_post_invalid_type', __('Invalid post type.'), ['status' => 400] );
+		}
+
+		$post = get_post_type_object($postType);
+
+		if (!$post->show_in_rest || !current_user_can($post->cap->edit_post, $postId)) {
+			return new WP_Error(
+				'woocommerce_rest_cannot_view',
+				__('Sorry, you cannot access this resource.', 'xcore'),
+				['status' => rest_authorization_required_code()]
+			);
+		}
+
+		return true;
+	}
+
+	public function get_items_permissions_check($request)
+	{
+		$postType = $request->get_param('type');
+		$post     = get_post_type_object($postType);
+
+		if (!$post) {
+			return new WP_Error('rest_post_invalid_type', __('Invalid post type.'), ['status' => 400] );
+		}
+
+		if (!current_user_can($post->cap->edit_posts)) {
+			return new WP_Error(
+				'woocommerce_rest_cannot_view',
+				__('Sorry, you cannot access this resource.', 'xcore'),
+				['status' => rest_authorization_required_code()]
+			);
+		}
+
+		return true;
+	}
+
+	public function update_item_permissions_check($request)
+	{
+		$postType = $request->get_param('type');
+		$postId   = $request->get_param('id');
+
+		if (!post_type_exists($postType)) {
+			return new WP_Error('rest_post_invalid_type', __('Invalid post type.'), ['status' => 400] );
+		}
+
+		$post = get_post_type_object($postType);
+
+		if (!$post->show_in_rest || !current_user_can($post->cap->edit_post, $postId)) {
+			return new WP_Error(
+				'woocommerce_rest_cannot_view',
+				__('Sorry, you cannot access this resource.', 'xcore'),
+				['status' => rest_authorization_required_code()]
+			);
+		}
+
+		return true;
+	}
+
+	public function create_item_permissions_check($request)
+	{
+		$postId = $request->get_param('id');
+
+		if ($postId) {
+			return new WP_Error(
+				'rest_post_exists', __('Cannot create existing post.'), array('status' => 400)
+			);
+		}
+
+		$postType = $request->get_param('type');
+
+		if (!post_type_exists($postType)) {
+			return new WP_Error('rest_post_invalid_type', __('Invalid post type.'), ['status' => 400]);
+		}
+
+		$post = get_post_type_object($postType);
+
+		if (!$post->show_in_rest || !current_user_can($post->cap->edit_others_posts)) {
+			return new WP_Error(
+				'rest_cannot_edit_others',
+				__('Sorry, you are not allowed to create posts as this user.'),
+				array('status' => rest_authorization_required_code())
+			);
+		}
+
 		return true;
 	}
 }
