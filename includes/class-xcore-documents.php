@@ -76,6 +76,10 @@ class Xcore_Documents
     {
         $document = apply_filters('xcore_rest_document_download', $request);
 
+		if (is_wp_error($document)) {
+			return $document;
+		}
+
         if (is_null($document)) {
             $orderId = $request->get_param('order_id');
             return new WP_Error(
@@ -88,7 +92,7 @@ class Xcore_Documents
         $data['data']                      = $document['data'];
         $data['file_name']                 = $document['file_name'];
         $data['file_extension']            = $document['file_type'];
-        $data['media_data_base64_encoded'] = base64_encode($document['file']);
+        $data['media_data_base64_encoded'] = $document['file'] ? base64_encode($document['file']) : null;
 
         $response = new WP_REST_Response();
         $response->set_data($data);

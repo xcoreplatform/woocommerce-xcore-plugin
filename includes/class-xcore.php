@@ -3,7 +3,7 @@
 defined( 'ABSPATH' ) || exit;
 #[AllowDynamicProperties]
 class Xcore {
-	private        $_version     = '1.15.2';
+	private        $_version     = '1.15.3';
 	private static $_instance    = null;
     private        $_xcoreHelper = null;
 
@@ -441,7 +441,7 @@ class Xcore {
 		    return null;
 	    }
 
-	    if (($order->get_user_id() !== get_current_user_id()) && !current_user_can('read_shop_order', $orderId)) {
+	    if (!is_user_logged_in() || !current_user_can('read_shop_order', $orderId)) {
 		    return new WP_Error(
 			    'woocommerce_rest_cannot_view',
 			    __('Sorry, you cannot access this resource.', 'xcore'),
@@ -452,7 +452,7 @@ class Xcore {
 		if (function_exists( 'wcpdf_get_document')) {
 			$document = wcpdf_get_document($type ?: 'invoice', $orderId);
 
-			if ( is_object($document) && method_exists($document, 'get_pdf')) {
+			if (is_object($document) && method_exists($document, 'get_pdf')) {
 				return [
 					'file_name' => $document->get_filename(),
 					'file_type' => 'PDF',
